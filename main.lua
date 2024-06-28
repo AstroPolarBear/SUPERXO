@@ -2,9 +2,16 @@ if os.getenv("LOCAL_LUA_DEBUGGER_VSCODE") == "1" then
     require("lldebugger").start()
   end
 
-function love.load()
-    
+local Block = require "Block"
 
+local Grid = require "Grid"
+
+function love.load()
+    _G.window_w , _G.window_h = love.graphics.getDimensions()
+    _G.box_l = 0.6 * window_w
+    _G.box_x, _G.box_y = (window_w * 0.2), (window_h * 0.1)
+
+    _G.grid = Grid(box_l, box_x, box_y)
 end
 
 function love.update(dt)
@@ -13,30 +20,16 @@ end
 
 
 function love.draw()
-    local window_w , window_h = love.graphics.getDimensions()
-    local box_l = 0.6 * window_w
-    local box_x, box_y = (window_w * 0.2), (window_h * 0.1)
-
     love.graphics.setColor(0,0,1)
     love.graphics.rectangle("fill", box_x, box_y, box_l, box_l)
 
-    local slot_l = 0.3 * box_l
-    local slot_x = box_x
-    local slot_y = box_y
-
-    love.graphics.setColor(1,1,1)
-    for i = 1, 3, 1 do
-        for j = 1, 3, 1 do
-            love.graphics.rectangle("fill", slot_x, slot_y, slot_l, slot_l)
-            slot_x = slot_x + slot_l + (0.05 * box_l)            
-        end
-        slot_x = box_x
-        slot_y = slot_y + slot_l + (0.05 * box_l)
+    for i = 1, 9, 1 do
+        grid[i]:draw()
     end
 end
 
-function love.mousepressed(mx, my, button)
-    if button == 1 and then
+-- function love.mousepressed(mx, my, button)
+--     if button == 1 
         
-    end
-end
+--     end
+-- end
