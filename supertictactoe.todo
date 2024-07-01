@@ -1,0 +1,38 @@
+Super Tic Tac Toe:
+    ☐ Create Base Game
+        ✔ Grid @done(24-07-01 21:46)
+
+        ✔ Press Detection @done(24-07-01 21:46)
+
+        ✔ Win Condition @done(24-07-01 21:46)
+
+        ✔ Game Over Screen @done(24-07-01 21:46)
+
+        ☐ Pause
+            ☐ Cover screen with a tint
+            ☐ Disable gameplay while keeping the drawing
+
+        ☐ Menu
+            ✔ Buttons @done(24-07-01 21:51)
+            ☐ Logo
+            ☐ Animated Background
+
+        ☐ Pixel Art
+            ☐ Choose Theme
+            ☐ Create fitting Xs and Os
+            ☐ Grid, grid block
+            ☐ Background
+            If possible,
+            ☐ Animated
+
+    ☐ Create Super Version
+        ☐ Scale grid
+
+        ☐ Camera for active grid
+
+    ☐ A.I.
+        ☐ For Base Game
+        
+        ☐ For Super
+
+    ☐ Online
