@@ -35,7 +35,6 @@ function Block(length, block_x, block_y)
 
             if (mouse_x >= self.b_x) and (mouse_x <= self.b_x + self.b_l) then
                 if (mouse_y >= self.b_y) and (mouse_y <= self.b_y + self.b_l) then
-                    print("Button no." .. index .. " pressed.")
                     if player == 1 then
                         grid[index].state = 1
                     elseif player == 2 then

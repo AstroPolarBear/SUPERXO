@@ -8,9 +8,9 @@ Super Tic Tac Toe:
 
         ✔ Game Over Screen @done(24-07-01 21:46)
 
-        ☐ Pause
-            ☐ Cover screen with a tint
-            ☐ Disable gameplay while keeping the drawing
+        ✔ Pause @done(24-07-04 13:33)
+            ✔ Cover screen with a tint @done(24-07-04 13:32)
+            ✔ Disable gameplay while keeping the drawing @done(24-07-04 13:32)
 
         ☐ Menu
             ✔ Buttons @done(24-07-01 21:51)

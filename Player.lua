@@ -1,6 +1,6 @@
 function SwitchTurn(current_turn)
     if current_turn == 1 then
-                                                                    player = 2
+        player = 2
     elseif current_turn == 2 then
         player = 1
     end
