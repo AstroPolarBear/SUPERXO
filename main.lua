@@ -52,7 +52,6 @@ function love.load()
         paused = {},
         game_over = {}
     }
-
     buttons.menu.play_game = Button("Play", ChangeState, "menu", "running", 100, 20)
     buttons.menu.exit_game = Button("Exit", love.event.quit, nil, nil, 100, 20)
     
@@ -121,8 +120,11 @@ function love.draw()
         end
 
     elseif game_state.menu then
-        buttons.menu.play_game:draw(10, 20, 35, 2)
-        buttons.menu.exit_game:draw(10, 50, 35, 2)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.print("Super Tic Tac Toe!", (window_w * 0.415), (window_h * 0.3))
+
+        buttons.menu.play_game:draw((window_w * 0.5 - 60), (window_h * 0.5), 35, 2)
+        buttons.menu.exit_game:draw((window_w * 0.5 - 60), (window_h * 0.5 + 30), 35, 2)
 
     elseif game_state.game_over then
         buttons.game_over.restart:draw(10, 20, 30, 2)
