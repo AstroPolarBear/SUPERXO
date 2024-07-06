@@ -7,6 +7,14 @@ local Player = require "Player"
 
 local player_turn = 1
 
+function Black()
+    love.graphics.setColor(34/255, 35/255, 35/255)
+end
+
+function White()
+    love.graphics.setColor(240/355, 246/255, 240/255)
+end
+
 function NewGame()
     for i = 1, 9 do
         grid[i].state = 0
@@ -39,6 +47,8 @@ function love.load()
     _G.box_x, _G.box_y = (window_w * 0.2), (window_h * 0.1)
 
     _G.grid = Grid(box_l, box_x, box_y)
+
+    _G.player1 = love.graphics.newImage('sprites/X_NoBG.png')
 
     _G.game_state = {}
     game_state.menu = true
@@ -99,13 +109,13 @@ function love.update(dt)
 
 end
 
-
 function love.draw()
     if game_state.running then
-        love.graphics.setColor(0,0,1)
+        White()
         love.graphics.rectangle("fill", box_x, box_y, box_l, box_l)
 
         for i = 1,9 do
+            Black()
             grid[i]:draw()
         end
         
@@ -120,12 +130,12 @@ function love.draw()
         end
 
     elseif game_state.menu then
+        love.graphics.draw(player1, 10, 10)
         love.graphics.setColor(1, 1, 1)
         love.graphics.print("Super Tic Tac Toe!", (window_w * 0.415), (window_h * 0.3))
 
         buttons.menu.play_game:draw((window_w * 0.5 - 60), (window_h * 0.5), 35, 2)
         buttons.menu.exit_game:draw((window_w * 0.5 - 60), (window_h * 0.5 + 30), 35, 2)
-
     elseif game_state.game_over then
         buttons.game_over.restart:draw(10, 20, 30, 2)
         buttons.game_over.quit:draw(10, 50, 5, 2)

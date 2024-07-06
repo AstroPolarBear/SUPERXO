@@ -1,3 +1,6 @@
+local player1 = love.graphics.newImage('sprites/X_NoBG.png')
+local player2 = love.graphics.newImage('sprites/O_NoBG.png')
+
 function Block(length, block_x, block_y)
     return {
         b_l = length or 10,
@@ -9,21 +12,21 @@ function Block(length, block_x, block_y)
             self.b_x = b_x or self.b_x
             self.b_y = b_y or self.b_y
 
-            love.graphics.setColor(1,1,1)
-
             love.graphics.rectangle("fill", self.b_x, self.b_y, self.b_l, self.b_l)
 
-            love.graphics.setColor(0,0,0)
+            -- love.graphics.setColor(0,0,0)
 
             if self.state == 1 then
-                love.graphics.setLineWidth(5)
-                love.graphics.line(self.b_x, self.b_y, self.b_x + self.b_l, self.b_y + self.b_l)
-                love.graphics.line(self.b_x, self.b_y  + self.b_l, self.b_x + self.b_l, self.b_y)
+                love.graphics.draw(player1, self.b_x, self.b_y)
+                -- love.graphics.setLineWidth(5)
+                -- love.graphics.line(self.b_x, self.b_y, self.b_x + self.b_l, self.b_y + self.b_l)
+                -- love.graphics.line(self.b_x, self.b_y  + self.b_l, self.b_x + self.b_l, self.b_y)
             elseif self.state == 2 then
-                local circle_x = self.b_x + (self.b_l / 2)
-                local circle_y = self.b_y + (self.b_l / 2)
-                local circle_r = self.b_l / 2
-                love.graphics.circle("line", circle_x, circle_y, circle_r)
+                love.graphics.draw(player2, self.b_x, self.b_y)
+                -- local circle_x = self.b_x + (self.b_l / 2)
+                -- local circle_y = self.b_y + (self.b_l / 2)
+                -- local circle_r = self.b_l / 2
+                -- love.graphics.circle("line", circle_x, circle_y, circle_r)
             end
 
         end,
