@@ -1,4 +1,4 @@
-require("lovedebug")
+-- require("lovedebug")
 
 local Block = require "Block"
 local Grid = require "Grid"
@@ -12,7 +12,7 @@ function Black()
 end
 
 function White()
-    love.graphics.setColor(240/355, 246/255, 240/255)
+    love.graphics.setColor(240/255, 246/255, 240/255)
 end
 
 function NewGame()
@@ -47,8 +47,6 @@ function love.load()
     _G.box_x, _G.box_y = (window_w * 0.2), (window_h * 0.1)
 
     _G.grid = Grid(box_l, box_x, box_y)
-
-    _G.player1 = love.graphics.newImage('sprites/X_NoBG.png')
 
     _G.game_state = {}
     game_state.menu = true
@@ -116,7 +114,7 @@ function love.draw()
 
         for i = 1,9 do
             Black()
-            grid[i]:draw()
+            grid[i]:draw(nil, nil, Black, White)
         end
         
         if game_state.paused then
@@ -130,7 +128,6 @@ function love.draw()
         end
 
     elseif game_state.menu then
-        love.graphics.draw(player1, 10, 10)
         love.graphics.setColor(1, 1, 1)
         love.graphics.print("Super Tic Tac Toe!", (window_w * 0.415), (window_h * 0.3))
 
