@@ -4,16 +4,9 @@ local Block = require "Block"
 local Grid = require "Grid"
 local Button = require "Button"
 local Player = require "Player"
+local Palette = require "Palette"
 
 local player_turn = 1
-
-function Black()
-    love.graphics.setColor(34/255, 35/255, 35/255)
-end
-
-function White()
-    love.graphics.setColor(240/255, 246/255, 240/255)
-end
 
 function NewGame()
     for i = 1, 9 do
@@ -114,7 +107,7 @@ function love.draw()
 
         for i = 1,9 do
             Black()
-            grid[i]:draw(nil, nil, Black, White)
+            grid[i]:draw()
         end
         
         if game_state.paused then

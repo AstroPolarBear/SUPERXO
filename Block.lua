@@ -1,7 +1,8 @@
+local Palette = require "Palette"
+
 love.graphics.setDefaultFilter("nearest", "nearest")
 player1 = love.graphics.newImage('sprites/X_NoBG.png')
 player2 = love.graphics.newImage('sprites/O_NoBG.png')
-
 
 function Block(length, block_x, block_y)
     return {
@@ -10,15 +11,15 @@ function Block(length, block_x, block_y)
         b_y = block_y or 0,
         state = 0,
 
-        draw = function (self, b_x, b_y, black, white)
+        draw = function (self, b_x, b_y)
             self.b_x = b_x or self.b_x
             self.b_y = b_y or self.b_y
 
-            black()
+            Black()
 
             love.graphics.rectangle("fill", self.b_x, self.b_y, self.b_l, self.b_l)
 
-            white()
+            White()
             if self.state == 1 then
                 love.graphics.draw(player1, self.b_x, self.b_y, nil, 4.5)
                 -- love.graphics.setLineWidth(5)
