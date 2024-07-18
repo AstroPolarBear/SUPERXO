@@ -1,3 +1,5 @@
+local palette = require 'Palette'
+
 function Button(text, func, func_param1, func_param2, width, height)
     return {
         width = width or 100,
@@ -27,10 +29,10 @@ function Button(text, func, func_param1, func_param2, width, height)
                 self.text_y = self.button_y
             end
             
-            love.graphics.setColor(0.6, 0.6, 0.6)
+            love.graphics.setColor(White)
             love.graphics.rectangle("fill", self.button_x, self.button_y, self.width, self.height)
 
-            love.graphics.setColor(0, 0, 0)
+            love.graphics.setColor(Black)
             love.graphics.print(self.text, self.text_x, self.text_y)
         end,
 

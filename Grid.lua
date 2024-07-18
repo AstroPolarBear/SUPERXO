@@ -3,10 +3,10 @@ local Block = require "Block"
 function Grid(box_l, box_x, box_y)
     local grid = {}
 
-    local block_l = 0.3 * box_l
+    local block_l = 152
     local block_x = box_x
     local block_y = box_y
-    local block_spacing = 0.05 * box_l
+    local block_spacing = 28
 
     local counter = 1
 

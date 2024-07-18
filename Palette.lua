@@ -1,7 +1,3 @@
-function Black()
-    love.graphics.setColor(34/255, 35/255, 35/255)
-end
+Black = {34/255, 35/255, 35/255}
 
-function White()
-    love.graphics.setColor(240/255, 246/255, 240/255)
-end
+White = {240/255, 246/255, 240/255}

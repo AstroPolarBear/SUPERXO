@@ -1,4 +1,4 @@
--- require("lovedebug")
+require("lovedebug")
 
 local Block = require "Block"
 local Grid = require "Grid"
@@ -36,10 +36,17 @@ end
 
 function love.load()
     _G.window_w , _G.window_h = love.graphics.getDimensions()
-    _G.box_l = 0.6 * window_w
-    _G.box_x, _G.box_y = (window_w * 0.2), (window_h * 0.1)
+    _G.grid_area = love.graphics.newImage('sprites/Grid_Black.png')
+    _G.box_l = grid_area:getWidth()
+    _G.box_x, _G.box_y = (window_w * 0.5) - (box_l * 0.5), (window_h * 0.5) - (box_l * 0.5)
 
     _G.grid = Grid(box_l, box_x, box_y)
+    
+
+    -- _G.bg_x = 20
+    -- _G.bg_y = 20
+    -- _G.star_size = 5
+    -- _G.bg_counter = 0
 
     _G.game_state = {}
     game_state.menu = true
@@ -51,8 +58,9 @@ function love.load()
         menu = {},
         running = {},
         paused = {},
-        game_over = {}
+        game_over = {} 
     }
+
     buttons.menu.play_game = Button("Play", ChangeState, "menu", "running", 100, 20)
     buttons.menu.exit_game = Button("Exit", love.event.quit, nil, nil, 100, 20)
     
@@ -97,16 +105,23 @@ function love.mousepressed(x, y, button)
 end
 
 function love.update(dt)
-
+    -- bg_counter = bg_counter + 1
+    -- if bg_counter == 60 then
+    --     _G.bg_star = true
+    -- elseif bg_counter == 90 then
+    --     bg_star = false
+    --     bg_counter = 0
+    -- end
 end
 
 function love.draw()
+    love.graphics.setBackgroundColor(Black)
     if game_state.running then
-        White()
+        love.graphics.setColor(White)
         love.graphics.rectangle("fill", box_x, box_y, box_l, box_l)
+        love.graphics.draw(grid_area, box_x, box_y)
 
         for i = 1,9 do
-            Black()
             grid[i]:draw()
         end
         
@@ -121,7 +136,14 @@ function love.draw()
         end
 
     elseif game_state.menu then
-        love.graphics.setColor(1, 1, 1)
+        love.graphics.setColor(White)
+        -- love.graphics.rectangle("fill", bg_x, bg_y, star_size, star_size)
+        -- if bg_star == true then
+        --     love.graphics.rectangle("fill", bg_x + star_size, bg_y, star_size, star_size)
+        --     love.graphics.rectangle("fill", bg_x , bg_y + star_size, star_size, star_size)
+        --     love.graphics.rectangle("fill", bg_x, bg_y - star_size, star_size, star_size)
+        --     love.graphics.rectangle("fill", bg_x - star_size, bg_y, star_size, star_size)
+        -- end
         love.graphics.print("Super Tic Tac Toe!", (window_w * 0.415), (window_h * 0.3))
 
         buttons.menu.play_game:draw((window_w * 0.5 - 60), (window_h * 0.5), 35, 2)
@@ -130,7 +152,7 @@ function love.draw()
         buttons.game_over.restart:draw(10, 20, 30, 2)
         buttons.game_over.quit:draw(10, 50, 5, 2)
 
-        love.graphics.setColor(1, 1, 1)
+        love.graphics.setColor(White)
         if winner ~= 0 then
             love.graphics.print("Player " .. winner .. " wins!", 10, 70)
         else

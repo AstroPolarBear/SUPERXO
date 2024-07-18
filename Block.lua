@@ -1,8 +1,8 @@
 local Palette = require "Palette"
 
 love.graphics.setDefaultFilter("nearest", "nearest")
-player1 = love.graphics.newImage('sprites/X_NoBG.png')
-player2 = love.graphics.newImage('sprites/O_NoBG.png')
+player1 = love.graphics.newImage('sprites/X_Black.png')
+player2 = love.graphics.newImage('sprites/O_Black.png')
 
 function Block(length, block_x, block_y)
     return {
@@ -12,25 +12,14 @@ function Block(length, block_x, block_y)
         state = 0,
 
         draw = function (self, b_x, b_y)
-            self.b_x = b_x or self.b_x
-            self.b_y = b_y or self.b_y
+            local offset_x, offset_y = 8, 8
+            b_x = b_x or self.b_x + offset_x
+            b_y = b_y or self.b_y + offset_y
 
-            Black()
-
-            love.graphics.rectangle("fill", self.b_x, self.b_y, self.b_l, self.b_l)
-
-            White()
             if self.state == 1 then
-                love.graphics.draw(player1, self.b_x, self.b_y, nil, 4.5)
-                -- love.graphics.setLineWidth(5)
-                -- love.graphics.line(self.b_x, self.b_y, self.b_x + self.b_l, self.b_y + self.b_l)
-                -- love.graphics.line(self.b_x, self.b_y  + self.b_l, self.b_x + self.b_l, self.b_y)
+                love.graphics.draw(player1, b_x, b_y)
             elseif self.state == 2 then
-                love.graphics.draw(player2, self.b_x, self.b_y, nil, 4.5)
-                -- local circle_x = self.b_x + (self.b_l / 2)
-                -- local circle_y = self.b_y + (self.b_l / 2)
-                -- local circle_r = self.b_l / 2
-                -- love.graphics.circle("line", circle_x, circle_y, circle_r)
+                love.graphics.draw(player2, b_x, b_y)
             end
 
         end,
