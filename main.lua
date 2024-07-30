@@ -12,18 +12,22 @@ function NewGame()
     for i = 1, 9 do
         grid[i].state = 0
     end
+
+    show_menu = false
+
+    winner = nil
 end
 
-function Pause()
-    if game_state.paused then
-        game_state.paused = false
+function ShowMenu()
+    if show_menu then
+        show_menu = false
     else
-        game_state.paused = true
+        show_menu = true
     end
 end
 
 function ChangeState(from, to)
-    if to == "running" then
+    if to == "xo" then
         NewGame()
     end
 
@@ -50,57 +54,51 @@ function love.load()
 
     _G.game_state = {}
     game_state.menu = true
-    game_state.running = false
-    game_state.paused = false
-    game_state.game_over = false
+    game_state.xo = false
+    game_state.pick_mode = false
 
     _G.buttons = {
         menu = {},
-        running = {},
-        paused = {},
-        game_over = {} 
+        xo = {},
+        pick_mode = {}
     }
 
-    buttons.menu.play_game = Button("Play", ChangeState, "menu", "running", 100, 20)
+    buttons.menu.play_game = Button("Play", ChangeState, "menu", "pick_mode", 100, 20)
     buttons.menu.exit_game = Button("Exit", love.event.quit, nil, nil, 100, 20)
     
-    buttons.game_over.restart = Button("Restart", ChangeState, "game_over", "running", 100, 20)
-    buttons.game_over.quit = Button("Return to Menu", ChangeState, "game_over", "menu", 100, 20)
-    
-    buttons.running.pause = Button("P", Pause, nil, nil, 20, 20)
-    
-    buttons.paused.resume = Button("Resume", Pause, nil, nil, 100, 20)
-    buttons.paused.quit = Button("Return to Menu", ChangeState, "running", "menu", 100, 20)
+    buttons.xo.options = Button("P", ShowMenu, nil, nil, 20, 20)
+    buttons.xo.restart = Button("Restart", NewGame, nil, nil, 100, 20)
+    buttons.xo.quit = Button("Return to Menu", ChangeState, "xo", "menu", 100, 20)
+
+    buttons.pick_mode.normal = Button("X O", ChangeState, "pick_mode", "xo", 100, 20)
+    buttons.pick_mode.super = Button("SUPER X O", nil, nil, nil, 100, 20)
+    buttons.pick_mode.back = Button("BACK", ChangeState, "pick_mode", "menu", 100, 20)
 end
 
 function love.mousepressed(x, y, button)
     if button == 1 then
-        if game_state.running and game_state.paused then
-            for i in pairs(buttons.paused) do
-                buttons.paused[i]:pressCheck(x, y)
-            end
-        elseif game_state.running then
-            for i in pairs(buttons.running) do
-                buttons.running[i]:pressCheck(x, y)
-            end
-            for i = 1, 9 do
-                if grid[i]:pressCheck(x, y, i, player_turn) then
-                    player_turn = SwitchTurn(player_turn)
-                    _G.winner = CheckWinner(grid)
-                    if winner then
-                        ChangeState("running", "game_over")
+
+        if game_state.xo then
+            
+            if not winner then
+                for i = 1, 9 do
+                    if grid[i]:pressCheck(x, y, i, player_turn) then
+                        player_turn = SwitchTurn(player_turn)
+                        _G.winner = CheckWinner(grid)
                     end
                 end
             end
-        elseif game_state.menu then
-            for i in pairs(buttons.menu) do
-                buttons.menu[i]:pressCheck(x, y)
-            end
-        elseif game_state.game_over then
-            for i in pairs(buttons.game_over) do
-                buttons.game_over[i]:pressCheck(x, y)
+
+        end
+
+        for i in pairs(game_state) do
+            if game_state[i] then
+                for j in pairs(buttons[i]) do
+                    buttons[i][j]:pressCheck(x,y)
+                end
             end
         end
+        
     end
 end
 
@@ -116,7 +114,10 @@ end
 
 function love.draw()
     love.graphics.setBackgroundColor(Black)
-    if game_state.running then
+    if game_state.xo then
+        love.graphics.setColor(White)
+        love.graphics.setLineWidth(4)
+        love.graphics.rectangle("line", box_x - 8, box_y - 8, box_l + 16, box_l + 16)
         love.graphics.setColor(White)
         love.graphics.rectangle("fill", box_x, box_y, box_l, box_l)
         love.graphics.draw(grid_area, box_x, box_y)
@@ -125,14 +126,26 @@ function love.draw()
             grid[i]:draw()
         end
         
-        if game_state.paused then
-            love.graphics.setColor(0, 0, 0, 0.8)
-            love.graphics.rectangle("fill", 0, 0, window_w, window_h)
+        buttons.xo.options:draw((window_w - 30), 20, 5, 2)
 
-            buttons.paused.resume:draw(10, 20, 25, 2)
-            buttons.paused.quit:draw(10, 50, 3, 2)
-        else
-            buttons.running.pause:draw((window_w - 30), 20, 5, 2)
+        if not winner then
+            love.graphics.setColor(White)        
+            love.graphics.print("PLAYING:", 10, 70)
+            love.graphics.print("Player " .. player_turn, 10, 90)            
+        end
+
+        if show_menu or winner then
+            buttons.xo.restart:draw(5, 5, 30, 2)
+            buttons.xo.quit:draw(5, 45, 4, 2)
+        end
+
+        if winner then
+            love.graphics.setColor(White)
+            if winner ~= 0 then
+                love.graphics.print("Player " .. winner .. " wins!", 10, 70)
+            else
+                love.graphics.print("Tie!", 10, 70)
+            end
         end
 
     elseif game_state.menu then
@@ -148,15 +161,9 @@ function love.draw()
 
         buttons.menu.play_game:draw((window_w * 0.5 - 60), (window_h * 0.5), 35, 2)
         buttons.menu.exit_game:draw((window_w * 0.5 - 60), (window_h * 0.5 + 30), 35, 2)
-    elseif game_state.game_over then
-        buttons.game_over.restart:draw(10, 20, 30, 2)
-        buttons.game_over.quit:draw(10, 50, 5, 2)
-
-        love.graphics.setColor(White)
-        if winner ~= 0 then
-            love.graphics.print("Player " .. winner .. " wins!", 10, 70)
-        else
-            love.graphics.print("Tie!", 10, 70)
-        end
+    elseif game_state.pick_mode then
+        buttons.pick_mode.normal:draw((window_w * 0.5 - 60), (window_h * 0.3), 35, 2)
+        buttons.pick_mode.super:draw((window_w * 0.5 - 60), (window_h * 0.3 + 30), 15, 2)
+        buttons.pick_mode.back:draw((window_w * 0.5 - 60), (window_h * 0.3 + 60), 35, 2)
     end
 end

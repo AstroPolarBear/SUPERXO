@@ -6,24 +6,29 @@ Super Tic Tac Toe:
 
         ✔ Win Condition @done(24-07-01 21:46)
 
-        ✔ Game Over Screen @done(24-07-01 21:46)
+        ✘ Game Over Screen @cancelled(24-07-22 21:30)
 
-        ✔ Pause @done(24-07-04 13:33)
-            ✔ Cover screen with a tint @done(24-07-04 13:32)
-            ✔ Disable gameplay while keeping the drawing @done(24-07-04 13:32)
+        ✘ Pause @cancelled(24-07-22 21:29)
+            ✘ Cover screen with a tint @cancelled(24-07-22 21:29)
+            ✘ Disable gameplay while keeping the drawing @cancelled(24-07-22 21:29)
 
-        ☐ Menu
-            ✔ Buttons @done(24-07-01 21:51)
-            ☐ Logo
-            ☐ Animated Background
+        ☐ In Game Screen
+            ✔ Menu Button (Restart & Quit) @done(24-07-23 00:18)
+            ✔ Show Player Turn @done(24-07-23 00:33)
+            ✔ Show final board state & Winner @done(24-07-23 00:18)
 
-        ☐ Pixel Art
-            ☐ Choose Theme
-            ☐ Create fitting Xs and Os
-            ☐ Grid, grid block
-            ☐ Background
-            If possible,
-            ☐ Animated
+    ☐ Menu
+        ✔ Buttons @done(24-07-01 21:51)
+        ☐ Logo
+        ☐ Animated Background
+        
+    ☐ Pixel Art
+        ✔ Choose Theme @done(24-07-22 21:29)
+        ✔ Create fitting Xs and Os @done(24-07-22 21:29)
+        ✔ Grid, grid block @done(24-07-22 21:29)
+        ☐ Background
+        If possible,
+        ☐ Animated
 
     ☐ Create Super Version
         ☐ Scale grid
