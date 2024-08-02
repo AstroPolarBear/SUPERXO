@@ -13,7 +13,7 @@ function Button(text, func, func_param1, func_param2, width, height)
         text_x = 0,
         text_y = 0,
 
-        draw = function(self, button_x, button_y, text_x, text_y)
+        draw = function(self, button_x, button_y, text_x, text_y, type)
             self.button_x = button_x
             self.button_y = button_y
 
@@ -30,7 +30,7 @@ function Button(text, func, func_param1, func_param2, width, height)
             end
             
             love.graphics.setColor(White)
-            love.graphics.rectangle("fill", self.button_x, self.button_y, self.width, self.height)
+            love.graphics.rectangle(type, self.button_x, self.button_y, self.width, self.height)
 
             love.graphics.setColor(Black)
             love.graphics.print(self.text, self.text_x, self.text_y)

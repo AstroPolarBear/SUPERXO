@@ -24,7 +24,7 @@ function Block(length, block_x, block_y)
 
         end,
 
-        pressCheck = function (self, mouse_x, mouse_y, index, player)
+        pressCheck = function (self, mouse_x, mouse_y, player)
             if self.state ~= 0 then
                 return
             end
@@ -32,9 +32,9 @@ function Block(length, block_x, block_y)
             if (mouse_x >= self.b_x) and (mouse_x <= self.b_x + self.b_l) then
                 if (mouse_y >= self.b_y) and (mouse_y <= self.b_y + self.b_l) then
                     if player == 1 then
-                        grid[index].state = 1
+                        self.state = 1
                     elseif player == 2 then
-                        grid[index].state = 2
+                        self.state = 2
                     end
                     return true
                 end
