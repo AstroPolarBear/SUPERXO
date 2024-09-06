@@ -11,6 +11,7 @@ local player_turn = 1
 function NewGame()
     for i = 1, 9 do
         grid[i].state = 0
+        grid[i].winner = false
     end
 
     for i = 1, 9 do
@@ -58,9 +59,18 @@ function SetCam(grid)
     supergrid[grid].set_cam = true
 end
 
+function MouseCheck()
+
+end
+
 function love.load()
+    love.window.setMode(240 * 4, 135 * 4)
     _G.window_w , _G.window_h = love.graphics.getDimensions()
-    _G.grid_area = love.graphics.newImage('sprites/Grid_Black.png')
+    _G.cursor1 = love.mouse.newCursor("sprites/Cursor1.png", 0, 0)
+    _G.cursor2 = love.mouse.newCursor("sprites/Cursor2.png", 0, 0)
+    _G.cursor3 = love.mouse.newCursor("sprites/Cursor3.png", 0, 0)
+    love.mouse.setCursor(cursor1)
+    _G.grid_area = love.graphics.newImage('sprites/Grid_Black2.png')
     _G.box_l = grid_area:getWidth()
     _G.box_x, _G.box_y = (window_w * 0.5) - (box_l * 0.5), (window_h * 0.5) - (box_l * 0.5)
 
@@ -113,15 +123,16 @@ end
 
 function love.mousepressed(x, y, button)
     if button == 1 then
-
+        love.mouse.setCursor(cursor3)
         if game_state.xo then
 
             if winner ~= 0 then
-                goto other
+                goto next
             end
             
             for i = 1, 9 do
-                if grid[i]:pressCheck(x, y, player_turn) then
+                if grid[i]:pressCheck(x, y) then
+                    XorO(grid[i], player_turn)
                     player_turn = SwitchTurn(player_turn)
                     _G.winner = CheckWinner(grid)
                 end
@@ -133,13 +144,14 @@ function love.mousepressed(x, y, button)
         if game_state.superxo then
             
             if winner ~= 0 then
-                goto other
+                goto next
             end
 
             for i = 1, 9 do
                 if supergrid[i].active and supergrid[i].set_cam then
                     for j = 1, 9 do
-                        if supergrid[i][j]:pressCheck(x, y, player_turn) then
+                        if supergrid[i][j]:pressCheck(x, y) then
+                            XorO(supergrid[i][j], player_turn)
                             supergrid[i].state = CheckWinner(supergrid[i])
                             SwitchBoard(j)
                             player_turn = SwitchTurn(player_turn)
@@ -151,7 +163,7 @@ function love.mousepressed(x, y, button)
 
         end
 
-        ::other::
+        ::next::
         for i in pairs(game_state) do
             if game_state[i] then
                 for j in pairs(buttons[i]) do
@@ -161,6 +173,62 @@ function love.mousepressed(x, y, button)
         end
 
     end
+end
+
+function love.mousereleased(x, y, button)
+    if button == 1 then
+        love.mouse.setCursor(cursor1)
+    end
+end
+
+function love.mousemoved(x, y)
+    if game_state.xo then
+
+        if winner ~= 0 then
+            goto next
+        end
+
+        for i = 1, 9 do
+            if grid[i]:pressCheck(x, y) then
+                love.mouse.setCursor(cursor2)
+                return
+            end
+        end
+
+    end
+
+    if game_state.superxo then
+            
+        if winner ~= 0 then
+            goto next
+        end
+
+        for i = 1, 9 do
+            if supergrid[i].active and supergrid[i].set_cam then
+                for j = 1, 9 do
+                    if supergrid[i][j]:pressCheck(x, y) then
+                        love.mouse.setCursor(cursor2)
+                        return
+                    end
+                end
+            end
+        end
+
+    end
+
+    ::next::
+    for i in pairs(game_state) do
+        if game_state[i] then
+            for j in pairs(buttons[i]) do
+                if buttons[i][j]:pressCheck(x, y, true) then
+                    love.mouse.setCursor(cursor2)
+                    return
+                end
+            end
+        end
+    end
+
+    love.mouse.setCursor(cursor1)
 end
 
 function love.update(dt)
@@ -257,14 +325,13 @@ function love.draw()
 
         if winner == 0 then
             love.graphics.setColor(White)
-            love.graphics.print("PLAYING:", 10, 70)
-            love.graphics.print("Player " .. player_turn, 10, 90)
+            love.graphics.print("TURN: Player " .. player_turn, 10, 90)
             for i = 1, 9 do
                 if supergrid[i].active then
-                    love.graphics.print("Board " .. i, 10, 110)
+                    love.graphics.print("ACTIVE: Board " .. i, 10, 110)
                 end
                 if supergrid[i].set_cam then
-                    love.graphics.print("Viewing Board " .. i, 10, 130)
+                    love.graphics.print("VIEWING: Board " .. i, 10, 130)
                 end
             end
         end

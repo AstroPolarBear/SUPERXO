@@ -36,10 +36,10 @@ function Button(text, func, func_param1, func_param2, width, height)
             love.graphics.print(self.text, self.text_x, self.text_y)
         end,
 
-        pressCheck = function (self, mouse_x, mouse_y)
+        pressCheck = function (self, mouse_x, mouse_y, IsHover)
             if (mouse_x >= self.button_x) and (mouse_x <= self.button_x + self.width) then
                 if (mouse_y >= self.button_y) and (mouse_y <= self.button_y + self.height) then
-                    if func then
+                    if func and not IsHover then
                         if self.func_param1 and self.func_param2 then
                             self.func(self.func_param1, self.func_param2)
                         elseif self.func_param1 then
