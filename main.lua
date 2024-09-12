@@ -1,13 +1,40 @@
-require("lovedebug")
+-- require("lovedebug")
 
+local rs = require "resolution_solution"
 local Block = require "Block"
 local Grid = require "Grid"
 local Button = require "Button"
 local Player = require "Player"
 local Palette = require "Palette"
 
-local player_turn = 1
+-- Screen Scaling --
+rs.conf({
+    game_width = 240 * 4,
+    game_height = 135 * 4,
+    scale_mode = rs.PIXEL_PERFECT_MODE
+})
+love.graphics.setDefaultFilter("nearest", "nearest")
 
+rs.setMode(rs.game_width, rs.game_height)
+
+love.resize = function(w, h)
+    rs.resize(w, h)
+end
+
+function ScaleFont(BaseSize, BaseWidth, NewWidth)
+    return BaseSize * (BaseWidth / NewWidth)
+end
+
+rs.resize_callback = function()
+    -- font = love.graphics.newFont("Pixeltype.ttf", math.max(math.min(rs.game_zone.w * 0.03, rs.game_zone.h * 0.03), 30))
+    FontL = love.graphics.newFont("Pixeltype.ttf", ScaleFont(96, 240 * 4, rs.game_width))
+    FontM = love.graphics.newFont("Pixeltype.ttf", ScaleFont(48, 240 * 4, rs.game_width))
+    FontS = love.graphics.newFont("Pixeltype.ttf", ScaleFont(24, 240 * 4, rs.game_width))
+    love.graphics.setFont(FontM)
+end
+
+
+-- Resets game boards for both game modes
 function NewGame()
     for i = 1, 9 do
         grid[i].state = 0
@@ -31,6 +58,7 @@ function NewGame()
     winner = 0
 end
 
+-- In-Game menu button
 function ShowMenu()
     if show_menu then
         show_menu = false
@@ -39,7 +67,9 @@ function ShowMenu()
     end
 end
 
-function ChangeState(from, to)
+-- Changes game state
+function ChangeState(to)
+    -- When switching to either game mode, starts a new game
     if to == "xo" or to == "superxo" then
         NewGame()
     end
@@ -51,6 +81,7 @@ function ChangeState(from, to)
     game_state[to] = true
 end
 
+-- Switches board on screen for Super game mode
 function SetCam(grid)
     for i = 1,9 do
         supergrid[i].set_cam = false
@@ -59,22 +90,28 @@ function SetCam(grid)
     supergrid[grid].set_cam = true
 end
 
-function MouseCheck()
-
-end
-
 function love.load()
-    love.window.setMode(240 * 4, 135 * 4)
-    _G.window_w , _G.window_h = love.graphics.getDimensions()
+    -- For scaling
+    rs.resize_callback()
+
+    -- Custom Cursor
     _G.cursor1 = love.mouse.newCursor("sprites/Cursor1.png", 0, 0)
     _G.cursor2 = love.mouse.newCursor("sprites/Cursor2.png", 0, 0)
     _G.cursor3 = love.mouse.newCursor("sprites/Cursor3.png", 0, 0)
     love.mouse.setCursor(cursor1)
+
+    -- Initiates game board
     _G.grid_area = love.graphics.newImage('sprites/Grid_Black2.png')
+
+    -- Assigns screen size and board size to variables
+    _G.window_w , _G.window_h = rs.game_width, rs.game_height
     _G.box_l = grid_area:getWidth()
     _G.box_x, _G.box_y = (window_w * 0.5) - (box_l * 0.5), (window_h * 0.5) - (box_l * 0.5)
 
+    -- Creates a single tic tac toe board
     _G.grid = Grid(box_l, box_x, box_y)
+
+    -- Creates 9 tic tac toe boards to be inside one table for Super mode
     _G.supergrid = {}
 
     for i = 1,9 do
@@ -89,47 +126,74 @@ function love.load()
     -- _G.star_size = 5
     -- _G.bg_counter = 0
 
+    -- Table of game states, menu is enabled by default
     _G.game_state = {}
     game_state.menu = true
     game_state.xo = false
     game_state.superxo = false
-    game_state.pick_mode = false
 
+    -- Table to store buttons for each game state
     _G.buttons = {
         menu = {},
         xo = {},
         superxo = {},
-        pick_mode = {}
     }
 
-    buttons.menu.play_game = Button("Play", ChangeState, "menu", "pick_mode", 100, 20)
-    buttons.menu.exit_game = Button("Exit", love.event.quit, nil, nil, 100, 20)
+    -- Box sizes
+    _G.sizeL_h = 0.15 * rs.game_height
+    _G.sizeL_w = 0.80 * rs.game_width
 
-    buttons.xo.options = Button("P", ShowMenu, nil, nil, 20, 20)
-    buttons.xo.restart = Button("Restart", NewGame, nil, nil, 100, 20)
-    buttons.xo.quit = Button("Return to Menu", ChangeState, "xo", "menu", 100, 20)
+    _G.sizeM_h = 0.10 * rs.game_height
+    _G.sizeM_w = 0.20 * rs.game_width
 
-    buttons.superxo.options = Button("P", ShowMenu, nil, nil, 20, 20)
-    buttons.superxo.restart = Button("Restart", NewGame, nil, nil, 100, 20)
-    buttons.superxo.quit = Button("Return to Menu", ChangeState, "xo", "menu", 100, 20)
+    -- Creating buttons for each game state
+    buttons.menu.play_standard = Button("STANDARD", ChangeState, "xo", sizeL_w, sizeL_h)
+    buttons.menu.play_super = Button("SUPER", ChangeState, "superxo", sizeL_w, sizeL_h)
+    buttons.menu.exit_game = Button("EXIT", love.event.quit, nil, sizeL_w, sizeL_h)
+
+    buttons.xo.options = Button("P", ShowMenu, nil, 20, 20)
+    buttons.xo.restart = Button("Restart", NewGame, nil, sizeM_w, sizeM_h)
+    buttons.xo.quit = Button("Menu", ChangeState, "menu", sizeM_w, sizeM_h)
+
+    buttons.superxo.options = Button("P", ShowMenu, nil, 20, 20)
+    buttons.superxo.restart = Button("Restart", NewGame, nil, sizeM_w, sizeM_h)
+    buttons.superxo.quit = Button("Menu", ChangeState, "menu", sizeM_w, sizeM_h)
     for i = 1,9 do
-        buttons.superxo[i] = Button("", SetCam, i, nil, 20, 20)
+        buttons.superxo[i] = Button("", SetCam, i, 20, 20)
     end
 
-    buttons.pick_mode.normal = Button("X O", ChangeState, "pick_mode", "xo", 100, 20)
-    buttons.pick_mode.super = Button("SUPER X O", ChangeState, "pick_mode", "superxo", 100, 20)
-    buttons.pick_mode.back = Button("BACK", ChangeState, "pick_mode", "menu", 100, 20)
+
+    -- Initiating player turn, only the first game starts with player 1
+    player_turn = 1
 end
 
+-- Press F11 for fullscreen
+function love.keypressed(key, scancode, isrepeat)
+	if key == "f11" then
+		fullscreen = not fullscreen
+		love.window.setFullscreen(fullscreen, "desktop")
+	end
+end
+
+-- Detects mouse presses for each gamestate
 function love.mousepressed(x, y, button)
+    -- Grab coordinates after scaling
+    x, y = rs.to_game(x, y)
+
+    -- Make sure its left click
     if button == 1 then
+        -- On press, uses Cursor 3
         love.mouse.setCursor(cursor3)
+
+
         if game_state.xo then
 
+            -- Only menu buttons are active if Game over
             if winner ~= 0 then
                 goto next
             end
             
+            -- Places X or O on board depending on player turn
             for i = 1, 9 do
                 if grid[i]:pressCheck(x, y) then
                     XorO(grid[i], player_turn)
@@ -143,10 +207,12 @@ function love.mousepressed(x, y, button)
 
         if game_state.superxo then
             
+            -- Only menu buttons are active if Game over
             if winner ~= 0 then
                 goto next
             end
 
+            -- Places X or O on the active board, depending on player turn
             for i = 1, 9 do
                 if supergrid[i].active and supergrid[i].set_cam then
                     for j = 1, 9 do
@@ -164,6 +230,7 @@ function love.mousepressed(x, y, button)
         end
 
         ::next::
+        -- Buttons
         for i in pairs(game_state) do
             if game_state[i] then
                 for j in pairs(buttons[i]) do
@@ -175,13 +242,16 @@ function love.mousepressed(x, y, button)
     end
 end
 
+-- Switch to default cursor after mouse button is released
 function love.mousereleased(x, y, button)
     if button == 1 then
         love.mouse.setCursor(cursor1)
     end
 end
 
+-- Changes cursor if its placed on clickable areas of the board or buttons
 function love.mousemoved(x, y)
+    x, y = rs.to_game(x, y)
     if game_state.xo then
 
         if winner ~= 0 then
@@ -222,7 +292,10 @@ function love.mousemoved(x, y)
             for j in pairs(buttons[i]) do
                 if buttons[i][j]:pressCheck(x, y, true) then
                     love.mouse.setCursor(cursor2)
+                    buttons[i][j].type = 1
                     return
+                else
+                    buttons[i][j].type = 0
                 end
             end
         end
@@ -242,12 +315,19 @@ function love.update(dt)
 end
 
 function love.draw()
+    -- For Scaling
+    rs.push()
+    local old_x, old_y, old_w, old_h = love.graphics.getScissor()
+    love.graphics.setScissor(rs.get_game_zone())
+
     love.graphics.setBackgroundColor(Black)
+    love.graphics.setLineWidth(2)
 
     if game_state.xo then
         love.graphics.setColor(White)
         love.graphics.setLineWidth(4)
         love.graphics.rectangle("line", box_x - 8, box_y - 8, box_l + 16, box_l + 16)
+        love.graphics.setLineWidth(2)
         love.graphics.setColor(White)
         love.graphics.rectangle("fill", box_x, box_y, box_l, box_l)
         love.graphics.draw(grid_area, box_x, box_y)
@@ -256,19 +336,21 @@ function love.draw()
             grid[i]:draw()
         end
 
-        buttons.xo.options:draw((window_w - 30), 20, 5, 2, "fill")
-
+        -- During gameplay
         if winner == 0 then
             love.graphics.setColor(White)
             love.graphics.print("PLAYING:", 10, 70)
-            love.graphics.print("Player " .. player_turn, 10, 90)
+            love.graphics.print("Player " .. player_turn, 10, 100)
         end
 
+        -- Menu
+        buttons.xo.options:draw((window_w - 30), 20, FontS)
         if show_menu or winner ~= 0 then
-            buttons.xo.restart:draw(5, 5, 30, 2, "fill")
-            buttons.xo.quit:draw(5, 45, 4, 2, "fill")
+            buttons.xo.restart:draw((window_w - 10 - sizeM_w), 45, FontM)
+            buttons.xo.quit:draw((window_w - 10 - sizeM_w), 55 + sizeM_h, FontM)
         end
 
+        -- Game over
         if winner ~= 0 then
             love.graphics.setColor(White)
             if winner ~= 0 and winner < 3 then
@@ -282,6 +364,7 @@ function love.draw()
         love.graphics.setColor(White)
         love.graphics.setLineWidth(4)
         love.graphics.rectangle("line", box_x - 8, box_y - 8, box_l + 16, box_l + 16)
+        love.graphics.setLineWidth(2)
         love.graphics.setColor(White)
         love.graphics.rectangle("fill", box_x, box_y, box_l, box_l)
         love.graphics.draw(grid_area, box_x, box_y)
@@ -294,21 +377,21 @@ function love.draw()
             end
         end
 
+        -- Mini grid to switch board on screen
         local minigrid_x = window_w - 80
         local minigrid_y = window_h - 80
         local minigrid_spacing = 5
         for i = 1, 9 do
-            love.graphics.setLineWidth(2)
 
-            buttons.superxo[i]:draw(minigrid_x, minigrid_y, nil, nil, "line")
-            if supergrid[i].set_cam then
+            buttons.superxo[i]:draw(minigrid_x, minigrid_y, nil, nil, 0, "line")
+            if supergrid[i].active then
                 love.graphics.setColor(White)
                 love.graphics.rectangle("fill", minigrid_x + 5, minigrid_y + 5, 10, 10)
             end
 
-            if supergrid[i].active then
-                buttons.superxo[i]:draw(minigrid_x, minigrid_y, nil, nil, "fill")
-                if supergrid[i].set_cam then
+            if supergrid[i].set_cam then
+                buttons.superxo[i]:draw(minigrid_x, minigrid_y, nil, nil, 0, "fill")
+                if supergrid[i].active then
                     love.graphics.setColor(Black)
                     love.graphics.rectangle("fill", minigrid_x + 5, minigrid_y + 5, 10, 10)
                     love.graphics.setColor(White)
@@ -321,26 +404,29 @@ function love.draw()
                 minigrid_y = minigrid_y + 20 + minigrid_spacing
             end
         end
-        buttons.superxo.options:draw((window_w - 30), 20, 5, 2, "fill")
 
+        -- During gameplay
         if winner == 0 then
             love.graphics.setColor(White)
             love.graphics.print("TURN: Player " .. player_turn, 10, 90)
             for i = 1, 9 do
                 if supergrid[i].active then
-                    love.graphics.print("ACTIVE: Board " .. i, 10, 110)
+                    love.graphics.print("ACTIVE: Board " .. i, 10, 90 + (10 + sizeM_h))
                 end
                 if supergrid[i].set_cam then
-                    love.graphics.print("VIEWING: Board " .. i, 10, 130)
+                    love.graphics.print("VIEWING: Board " .. i, 10, 90 + (10 + sizeM_h)*2)
                 end
             end
         end
 
+        -- Menu
+        buttons.superxo.options:draw((window_w - 30), 20, FontS)
         if show_menu or winner ~= 0 then
-            buttons.superxo.restart:draw(5, 5, 30, 2, "fill")
-            buttons.superxo.quit:draw(5, 45, 4, 2, "fill")
+            buttons.superxo.restart:draw((window_w - 10 - sizeM_w), 45, FontM)
+            buttons.superxo.quit:draw((window_w - 10 - sizeM_w), 55 + sizeM_h, FontM)
         end
 
+        -- Game over
         if winner ~= 0 then
             love.graphics.setColor(White)
             if winner ~= 0 and winner < 3 then
@@ -361,12 +447,11 @@ function love.draw()
         -- end
         love.graphics.print("Super Tic Tac Toe!", (window_w * 0.415), (window_h * 0.3))
 
-        buttons.menu.play_game:draw((window_w * 0.5 - 60), (window_h * 0.5), 35, 2, "fill")
-        buttons.menu.exit_game:draw((window_w * 0.5 - 60), (window_h * 0.5 + 30), 35, 2, "fill")
+        buttons.menu.play_standard:draw((window_w * 0.5 - sizeL_w * 0.5), (window_h * 0.4), FontL)
+        buttons.menu.play_super:draw((window_w * 0.5 - sizeL_w * 0.5), (window_h * 0.4 + sizeL_h + 10), FontL)
+        buttons.menu.exit_game:draw((window_w * 0.5 - sizeL_w * 0.5), (window_h * 0.4  + (sizeL_h + 10) * 2), FontL)
 
-    elseif game_state.pick_mode then
-        buttons.pick_mode.normal:draw((window_w * 0.5 - 60), (window_h * 0.3), 35, 2, "fill")
-        buttons.pick_mode.super:draw((window_w * 0.5 - 60), (window_h * 0.3 + 30), 15, 2, "fill")
-        buttons.pick_mode.back:draw((window_w * 0.5 - 60), (window_h * 0.3 + 60), 35, 2, "fill")
     end
+    love.graphics.setScissor(old_x, old_y, old_w, old_h)
+    rs.pop()
 end

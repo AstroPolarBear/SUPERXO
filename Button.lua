@@ -1,21 +1,28 @@
 local palette = require 'Palette'
 
-function Button(text, func, func_param1, func_param2, width, height)
+function Button(text, func, func_param, width, height)
     return {
         width = width or 100,
         height = height or 100,
         func = func or function() print("No function assigned.") end,
-        func_param1 = func_param1,
-        func_param2 = func_param2,
+        func_param = func_param,
         text = text or "Empty",
         button_x = 0,
         button_y = 0,
         text_x = 0,
         text_y = 0,
+        type = 0,
 
-        draw = function(self, button_x, button_y, text_x, text_y, type)
+        font = love.graphics.getFont(),
+        draw = function(self, button_x, button_y, font, text_x, text_y, type)
             self.button_x = button_x
             self.button_y = button_y
+
+            type = type or self.type
+
+            if font then
+                love.graphics.setFont(font)
+            end
 
             if text_x then
                 self.text_x = text_x + self.button_x
@@ -26,24 +33,36 @@ function Button(text, func, func_param1, func_param2, width, height)
             if text_y then
                 self.text_y = text_y + self.button_y
             else
-                self.text_y = self.button_y
+                self.text_y = self.button_y + (self.height / 2) - font:getBaseline() / 2
             end
             
-            love.graphics.setColor(White)
-            love.graphics.rectangle(type, self.button_x, self.button_y, self.width, self.height)
+            if type == 0 then
+                love.graphics.setColor(White)
+                love.graphics.rectangle("line", self.button_x, self.button_y, self.width, self.height)
 
-            love.graphics.setColor(Black)
-            love.graphics.print(self.text, self.text_x, self.text_y)
+                love.graphics.printf(self.text, self.text_x, self.text_y, self.width, "center")
+                -- love.graphics.print(self.text, self.text_x, self.text_y)
+            elseif type == 1 then
+                love.graphics.setColor(White)
+                love.graphics.rectangle("fill", self.button_x, self.button_y, self.width, self.height)
+
+                love.graphics.setColor(Black)
+                love.graphics.printf(self.text, self.text_x, self.text_y, self.width, "center")
+                -- love.graphics.print(self.text, self.text_x, self.text_y)
+            else
+                love.graphics.setColor(White)
+                love.graphics.rectangle(type, self.button_x, self.button_y, self.width, self.height)
+            end
+
+            love.graphics.setFont(FontM)
         end,
 
         pressCheck = function (self, mouse_x, mouse_y, IsHover)
             if (mouse_x >= self.button_x) and (mouse_x <= self.button_x + self.width) then
                 if (mouse_y >= self.button_y) and (mouse_y <= self.button_y + self.height) then
                     if func and not IsHover then
-                        if self.func_param1 and self.func_param2 then
-                            self.func(self.func_param1, self.func_param2)
-                        elseif self.func_param1 then
-                            self.func(self.func_param1)
+                        if self.func_param then
+                            self.func(self.func_param)
                         else
                             self.func()
                         end
