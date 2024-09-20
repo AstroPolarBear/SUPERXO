@@ -1,10 +1,8 @@
-local Palette = require "Palette"
-
 love.graphics.setDefaultFilter("nearest", "nearest")
-p1_b = love.graphics.newImage('sprites/X_Black.png')
-p1_w = love.graphics.newImage('sprites/X_White2.png')
-p2_b = love.graphics.newImage('sprites/O_Black.png')
-p2_w = love.graphics.newImage('sprites/O_White2.png')
+p1_b = love.graphics.newImage('assets/sprites/X_Black.png')
+p1_w = love.graphics.newImage('assets/sprites/X_White2.png')
+p2_b = love.graphics.newImage('assets/sprites/O_Black.png')
+p2_w = love.graphics.newImage('assets/sprites/O_White2.png')
 
 function Block(length, block_x, block_y)
     return {

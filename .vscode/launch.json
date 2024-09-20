@@ -1,13 +1,19 @@
 {
+  "version": "0.2.0",
   "configurations": [
     {
+      "name": "Debug Love",
       "type": "lua-local",
       "request": "launch",
-      "name": "Debug",
       "program": {
-        "lua": "lua5.1",
-        "file": "main.lua"
-      }
+        "command": "love"
+      },
+      "args": [
+        ""
+      ],
+      "scriptRoots": [
+        ""
+      ]
     }
   ]
 }

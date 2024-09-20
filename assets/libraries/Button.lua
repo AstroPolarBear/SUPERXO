@@ -1,5 +1,3 @@
-local palette = require 'Palette'
-
 function Button(text, func, func_param, width, height)
     return {
         width = width or 100,

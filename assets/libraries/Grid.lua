@@ -1,5 +1,3 @@
-local Block = require "Block"
-
 function Grid(box_l, box_x, box_y)
     local grid = {}
 

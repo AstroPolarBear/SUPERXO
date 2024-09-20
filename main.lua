@@ -1,11 +1,9 @@
--- require("lovedebug")
-
-local rs = require "resolution_solution"
-local Block = require "Block"
-local Grid = require "Grid"
-local Button = require "Button"
-local Player = require "Player"
-local Palette = require "Palette"
+local rs = require "assets/libraries/scaling/resolution_solution"
+local Block = require "assets/libraries/Block"
+local Grid = require "assets/libraries/Grid"
+local Button = require "assets/libraries/Button"
+local Player = require "assets/libraries/Player"
+local Palette = require "assets/libraries/Palette"
 
 -- Screen Scaling --
 rs.conf({
@@ -27,12 +25,16 @@ end
 
 rs.resize_callback = function()
     -- font = love.graphics.newFont("Pixeltype.ttf", math.max(math.min(rs.game_zone.w * 0.03, rs.game_zone.h * 0.03), 30))
-    FontL = love.graphics.newFont("Pixeltype.ttf", ScaleFont(96, 240 * 4, rs.game_width))
-    FontM = love.graphics.newFont("Pixeltype.ttf", ScaleFont(48, 240 * 4, rs.game_width))
-    FontS = love.graphics.newFont("Pixeltype.ttf", ScaleFont(24, 240 * 4, rs.game_width))
+    FontL = love.graphics.newFont("assets/fonts/Pixeltype.ttf", ScaleFont(96, 240 * 4, rs.game_width))
+    FontM = love.graphics.newFont("assets/fonts/Pixeltype.ttf", ScaleFont(48, 240 * 4, rs.game_width))
+    FontS = love.graphics.newFont("assets/fonts/Pixeltype.ttf", ScaleFont(32, 240 * 4, rs.game_width))
     love.graphics.setFont(FontM)
 end
 
+-- Debug
+if os.getenv("LOCAL_LUA_DEBUGGER_VSCODE") == "1" then
+    require("lldebugger").start()
+end
 
 -- Resets game boards for both game modes
 function NewGame()
@@ -47,7 +49,9 @@ function NewGame()
         supergrid[i].state = 0
         for j = 1, 9 do
             supergrid[i][j].state = 0
+            supergrid[i][j].winner = false
         end
+        mini_winner[i] = false
     end
 
     supergrid[1].active = true
@@ -90,18 +94,21 @@ function SetCam(grid)
     supergrid[grid].set_cam = true
 end
 
-function love.load()
+function love.load(arg)
+    -- Debug
+    if arg and arg[#arg] == "-debug" then require("mobdebug").start() end
     -- For scaling
     rs.resize_callback()
 
     -- Custom Cursor
-    _G.cursor1 = love.mouse.newCursor("sprites/Cursor1.png", 0, 0)
-    _G.cursor2 = love.mouse.newCursor("sprites/Cursor2.png", 0, 0)
-    _G.cursor3 = love.mouse.newCursor("sprites/Cursor3.png", 0, 0)
+    _G.cursor1 = love.mouse.newCursor("assets/sprites/Cursor1.png", 0, 0)
+    _G.cursor2 = love.mouse.newCursor("assets/sprites/Cursor2.png", 0, 0)
+    _G.cursor3 = love.mouse.newCursor("assets/sprites/Cursor3.png", 0, 0)
     love.mouse.setCursor(cursor1)
 
     -- Initiates game board
-    _G.grid_area = love.graphics.newImage('sprites/Grid_Black2.png')
+    _G.grid_area = love.graphics.newImage('assets/sprites/Grid_Black2.png')
+    _G.logo = love.graphics.newImage('assets/sprites/LOGO.png')
 
     -- Assigns screen size and board size to variables
     _G.window_w , _G.window_h = rs.game_width, rs.game_height
@@ -159,7 +166,7 @@ function love.load()
     buttons.superxo.restart = Button("Restart", NewGame, nil, sizeM_w, sizeM_h)
     buttons.superxo.quit = Button("Menu", ChangeState, "menu", sizeM_w, sizeM_h)
     for i = 1,9 do
-        buttons.superxo[i] = Button("", SetCam, i, 20, 20)
+        buttons.superxo[i] = Button("", SetCam, i, 40, 40)
     end
 
 
@@ -304,6 +311,10 @@ function love.mousemoved(x, y)
     love.mouse.setCursor(cursor1)
 end
 
+-- For animation
+counter = 0
+mini_winner = {}
+
 function love.update(dt)
     -- bg_counter = bg_counter + 1
     -- if bg_counter == 60 then
@@ -312,6 +323,23 @@ function love.update(dt)
     --     bg_star = false
     --     bg_counter = 0
     -- end
+    if winner ~= 0 then
+        if game_state.superxo then
+          counter = counter + dt
+          if counter >= 0.5 then
+            for i = 1,9 do
+                if supergrid[i].winner then
+                    if mini_winner[i] then
+                      mini_winner[i] = false
+                    else
+                      mini_winner[i] = true
+                    end
+                end
+            end
+            counter = 0
+          end
+        end
+    end
 end
 
 function love.draw()
@@ -323,6 +351,10 @@ function love.draw()
     love.graphics.setBackgroundColor(Black)
     love.graphics.setLineWidth(2)
 
+    local leftpos_x = 30
+    local leftpos_y = 30
+    local rightpos_x = (window_w - 10 - sizeM_w)
+    local rightpos_y = 200
     if game_state.xo then
         love.graphics.setColor(White)
         love.graphics.setLineWidth(4)
@@ -339,24 +371,25 @@ function love.draw()
         -- During gameplay
         if winner == 0 then
             love.graphics.setColor(White)
-            love.graphics.print("PLAYING:", 10, 70)
-            love.graphics.print("Player " .. player_turn, 10, 100)
+            love.graphics.print("PLAYING:", 10, leftpos_y)
+            love.graphics.print("PLAYER " .. player_turn, 10, leftpos_y + 30)
         end
 
         -- Menu
         buttons.xo.options:draw((window_w - 30), 20, FontS)
         if show_menu or winner ~= 0 then
-            buttons.xo.restart:draw((window_w - 10 - sizeM_w), 45, FontM)
-            buttons.xo.quit:draw((window_w - 10 - sizeM_w), 55 + sizeM_h, FontM)
+            buttons.xo.restart:draw(rightpos_x, 45, FontM)
+            buttons.xo.quit:draw(rightpos_x, 55 + sizeM_h, FontM)
         end
 
         -- Game over
         if winner ~= 0 then
             love.graphics.setColor(White)
             if winner ~= 0 and winner < 3 then
-                love.graphics.print("Player " .. winner .. " wins!", 10, 70)
+                love.graphics.print("PLAYER " .. winner, rightpos_x, rightpos_y)
+                love.graphics.print("WINS!", rightpos_x, rightpos_y + 30)
             else
-                love.graphics.print("Tie!", 10, 70)
+                love.graphics.print("TIE!", rightpos_x, rightpos_y)
             end
         end
     
@@ -378,44 +411,58 @@ function love.draw()
         end
 
         -- Mini grid to switch board on screen
-        local minigrid_x = window_w - 80
-        local minigrid_y = window_h - 80
-        local minigrid_spacing = 5
+        minigrid_boxsize = 20
+        minigrid_x = leftpos_x
+        minigrid_y = leftpos_y + 300
+        minigrid_spacing = 25
         for i = 1, 9 do
 
-            buttons.superxo[i]:draw(minigrid_x, minigrid_y, nil, nil, 0, "line")
-            if supergrid[i].active then
-                love.graphics.setColor(White)
-                love.graphics.rectangle("fill", minigrid_x + 5, minigrid_y + 5, 10, 10)
+            if supergrid[i].set_cam then
+                minigrid_color = "light"
+            else
+                minigrid_color = "dark"
             end
 
-            if supergrid[i].set_cam then
-                buttons.superxo[i]:draw(minigrid_x, minigrid_y, nil, nil, 0, "fill")
-                if supergrid[i].active then
-                    love.graphics.setColor(Black)
-                    love.graphics.rectangle("fill", minigrid_x + 5, minigrid_y + 5, 10, 10)
-                    love.graphics.setColor(White)
-                end
+
+            DrawMinigrid(i, minigrid_x, minigrid_y, minigrid_boxsize, minigrid_color)
+
+            if mini_winner[i] then
+                love.graphics.rectangle("line", minigrid_x - 1, minigrid_y - 1, (minigrid_boxsize * 2) + 2, (minigrid_boxsize * 2) + 2)
             end
 
             minigrid_x = minigrid_x + 20 + minigrid_spacing
             if i % 3 == 0 then
-                minigrid_x = window_w - 80
+                minigrid_x = leftpos_x
                 minigrid_y = minigrid_y + 20 + minigrid_spacing
             end
         end
 
         -- During gameplay
+        local count = 0
+        local active = nil
+        local nonactive = nil
         if winner == 0 then
             love.graphics.setColor(White)
-            love.graphics.print("TURN: Player " .. player_turn, 10, 90)
+            love.graphics.print("PLAYING:", 10, leftpos_y)
+            love.graphics.print("PLAYER " .. player_turn, 10, leftpos_y + 30)
             for i = 1, 9 do
                 if supergrid[i].active then
-                    love.graphics.print("ACTIVE: Board " .. i, 10, 90 + (10 + sizeM_h))
+                    count = count + 1
+                    active = i
+                else
+                    nonactive = i
                 end
                 if supergrid[i].set_cam then
-                    love.graphics.print("VIEWING: Board " .. i, 10, 90 + (10 + sizeM_h)*2)
+                    love.graphics.print("VIEWING:", 10, leftpos_y + 40 + (10 + sizeM_h)*2)
+                    love.graphics.print("BOARD " .. i, 10, leftpos_y + 70 + (10 + sizeM_h)*2)
                 end
+            end
+            if count > 1 then
+                love.graphics.print("ACTIVE:", 10, leftpos_y + 20 + (10 + sizeM_h))
+                love.graphics.print("ALL EXCEPT " .. nonactive, 10, leftpos_y + 50 + (10 + sizeM_h))
+            else
+                love.graphics.print("ACTIVE:", 10, leftpos_y + 20 + (10 + sizeM_h))
+                love.graphics.print("BOARD " .. active, 10, leftpos_y + 50 + (10 + sizeM_h))
             end
         end
 
@@ -430,9 +477,10 @@ function love.draw()
         if winner ~= 0 then
             love.graphics.setColor(White)
             if winner ~= 0 and winner < 3 then
-                love.graphics.print("Player " .. winner .. " wins!", 10, 70)
+                love.graphics.print("PLAYER " .. winner, rightpos_x, rightpos_y)
+                love.graphics.print("WINS!", rightpos_x, rightpos_y + 30)
             else
-                love.graphics.print("Tie!", 10, 70)
+                love.graphics.print("TIE!", rightpos_x, rightpos_y)
             end
         end
 
@@ -445,7 +493,8 @@ function love.draw()
         --     love.graphics.rectangle("fill", bg_x, bg_y - star_size, star_size, star_size)
         --     love.graphics.rectangle("fill", bg_x - star_size, bg_y, star_size, star_size)
         -- end
-        love.graphics.print("Super Tic Tac Toe!", (window_w * 0.415), (window_h * 0.3))
+        -- love.graphics.print("Super Tic Tac Toe!", (window_w * 0.415), (window_h * 0.3))
+        love.graphics.draw(logo, 32 * 4, 8 * 4)
 
         buttons.menu.play_standard:draw((window_w * 0.5 - sizeL_w * 0.5), (window_h * 0.4), FontL)
         buttons.menu.play_super:draw((window_w * 0.5 - sizeL_w * 0.5), (window_h * 0.4 + sizeL_h + 10), FontL)

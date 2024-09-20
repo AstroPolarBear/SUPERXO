@@ -19,15 +19,37 @@ end
 function SwitchBoard(b)
     if supergrid[b].state ~= 0 then
         for i = 1, 9 do
-            supergrid[i].active = true
+            if supergrid[i].state == 0 then
+                supergrid[i].active = true
+            end
         end
-        supergrid[b].active = false
     else
         for i = 1, 9 do
             supergrid[i].active = false
         end
         supergrid[b].active = true
     end
+end
+
+function DrawMinigrid(i, x, y, boxsize, color)
+    if color == "dark" then
+        buttons.superxo[i]:draw(x, y, nil, nil, 0, "line")
+        love.graphics.setColor(White)
+    elseif color == "light" then
+        buttons.superxo[i]:draw(x, y, nil, nil, 0, "fill")
+        love.graphics.setColor(Black)
+    end
+
+    if supergrid[i].state == 1 then
+        love.graphics.printf("X", x, y + boxsize - (FontM:getBaseline() / 2), boxsize * 2 + 2, "center")
+    elseif supergrid[i].state == 2 then
+        love.graphics.printf("O", x, y + boxsize - (FontM:getBaseline() / 2), boxsize * 2 + 2, "center")
+    end
+
+    if supergrid[i].active and winner == 0 then
+        love.graphics.rectangle("fill", x + (boxsize / 2), y + (boxsize / 2), boxsize, boxsize)
+    end
+    love.graphics.setColor(White)
 end
 
 function CheckWinner(grid)
