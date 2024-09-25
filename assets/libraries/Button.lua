@@ -59,6 +59,7 @@ function Button(text, func, func_param, width, height)
             if (mouse_x >= self.button_x) and (mouse_x <= self.button_x + self.width) then
                 if (mouse_y >= self.button_y) and (mouse_y <= self.button_y + self.height) then
                     if func and not IsHover then
+                        sounds.inbetween:play()
                         if self.func_param then
                             self.func(self.func_param)
                         else

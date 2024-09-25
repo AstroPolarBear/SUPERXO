@@ -83,6 +83,9 @@ function ChangeState(to)
     end
 
     game_state[to] = true
+
+    -- Restart animations/sounds
+    RestartDelayOrder()
 end
 
 -- Switches board on screen for Super game mode
@@ -92,6 +95,38 @@ function SetCam(grid)
     end
 
     supergrid[grid].set_cam = true
+end
+
+function Delay()
+    for i in pairs(game_state) do
+        if game_state[i] then
+            for j in pairs(delay_order[i]) do
+                if Timer < 0 and not delay_order[i][j] then
+                    delay_order[i][j] = true
+                    audio_order[i][j]:play()
+                    if j == 1 then
+                        Timer = 1.5
+                    else
+                        Timer = 0.5
+                    end
+                elseif delay_order[i][j] then
+                    goto next
+                else
+                    return
+                end
+                ::next::
+            end
+        end
+    end
+end
+
+function RestartDelayOrder()
+    for i in pairs(game_state) do
+        for j = 1, delay_instances[i] do
+            delay_order[i][j] = false
+        end
+    end
+    Timer = 1
 end
 
 function love.load(arg)
@@ -109,6 +144,16 @@ function love.load(arg)
     -- Initiates game board
     _G.grid_area = love.graphics.newImage('assets/sprites/Grid_Black2.png')
     _G.logo = love.graphics.newImage('assets/sprites/LOGO.png')
+
+    -- Loads in sound files
+    _G.sounds = {}
+    sounds.logo = love.audio.newSource('assets/sounds/logo-beep.mp3', "static")
+    sounds.logo:setVolume(0.5)
+    sounds.inbetween = love.audio.newSource('assets/sounds/inbetween-beep.mp3', "static")
+    sounds.inbetween:setVolume(0.5)
+    sounds.game_start = love.audio.newSource('assets/sounds/game-start-beep.mp3', "static")
+    sounds.game_start:setVolume(0.5)
+    sounds.win = love.audio.newSource('assets/sounds/winner-beep.mp3', "static")
 
     -- Assigns screen size and board size to variables
     _G.window_w , _G.window_h = rs.game_width, rs.game_height
@@ -145,6 +190,31 @@ function love.load(arg)
         xo = {},
         superxo = {},
     }
+
+    -- Table to store order of appearance (visual&audio)
+    _G.delay_instances = {}
+    delay_instances.menu = 4
+    delay_instances.xo = 3
+    delay_instances.superxo = 4
+
+    _G.delay_order = {}
+    _G.audio_order = {}
+    for i in pairs(game_state) do
+        delay_order[i] = {}
+        audio_order[i] = {}
+    end
+
+    audio_order["menu"][1] = sounds.logo
+    audio_order["xo"][1] = sounds.game_start
+    audio_order["superxo"][1] = sounds.game_start
+    for i in pairs(game_state) do
+        for j = 2, delay_instances[i] do
+            audio_order[i][j] = sounds.inbetween
+        end
+    end
+
+    -- Initiate all orders to the beginning
+    RestartDelayOrder()
 
     -- Box sizes
     _G.sizeL_h = 0.15 * rs.game_height
@@ -203,6 +273,7 @@ function love.mousepressed(x, y, button)
             -- Places X or O on board depending on player turn
             for i = 1, 9 do
                 if grid[i]:pressCheck(x, y) then
+                    sounds.inbetween:play()
                     XorO(grid[i], player_turn)
                     player_turn = SwitchTurn(player_turn)
                     _G.winner = CheckWinner(grid)
@@ -224,6 +295,7 @@ function love.mousepressed(x, y, button)
                 if supergrid[i].active and supergrid[i].set_cam then
                     for j = 1, 9 do
                         if supergrid[i][j]:pressCheck(x, y) then
+                            sounds.inbetween:play()
                             XorO(supergrid[i][j], player_turn)
                             supergrid[i].state = CheckWinner(supergrid[i])
                             SwitchBoard(j)
@@ -312,32 +384,32 @@ function love.mousemoved(x, y)
 end
 
 -- For animation
-counter = 0
+Counter = 0
 mini_winner = {}
 
 function love.update(dt)
-    -- bg_counter = bg_counter + 1
-    -- if bg_counter == 60 then
-    --     _G.bg_star = true
-    -- elseif bg_counter == 90 then
-    --     bg_star = false
-    --     bg_counter = 0
-    -- end
+
+    if Timer > -1 then
+        Timer = Timer - dt
+    end
+
+    Delay()
+
     if winner ~= 0 then
         if game_state.superxo then
-          counter = counter + dt
-          if counter >= 0.5 then
-            for i = 1,9 do
-                if supergrid[i].winner then
-                    if mini_winner[i] then
-                      mini_winner[i] = false
-                    else
+            Counter = Counter + dt
+            if Counter >= 0.5 then
+                for i = 1,9 do
+            if supergrid[i].winner then
+                if mini_winner[i] then
+                    mini_winner[i] = false
+                else
                       mini_winner[i] = true
                     end
+                    end
                 end
+                Counter = 0
             end
-            counter = 0
-          end
         end
     end
 end
@@ -356,32 +428,38 @@ function love.draw()
     local rightpos_x = (window_w - 10 - sizeM_w)
     local rightpos_y = 200
     if game_state.xo then
-        love.graphics.setColor(White)
-        love.graphics.setLineWidth(4)
-        love.graphics.rectangle("line", box_x - 8, box_y - 8, box_l + 16, box_l + 16)
-        love.graphics.setLineWidth(2)
-        love.graphics.setColor(White)
-        love.graphics.rectangle("fill", box_x, box_y, box_l, box_l)
-        love.graphics.draw(grid_area, box_x, box_y)
-
-        for i = 1,9 do
-            grid[i]:draw()
-        end
-
-        -- During gameplay
-        if winner == 0 then
+        if delay_order.xo[1] then
             love.graphics.setColor(White)
-            love.graphics.print("PLAYING:", 10, leftpos_y)
-            love.graphics.print("PLAYER " .. player_turn, 10, leftpos_y + 30)
+            love.graphics.setLineWidth(4)
+            love.graphics.rectangle("line", box_x - 8, box_y - 8, box_l + 16, box_l + 16)
+            love.graphics.setLineWidth(2)
+            love.graphics.setColor(White)
+            love.graphics.rectangle("fill", box_x, box_y, box_l, box_l)
+            love.graphics.draw(grid_area, box_x, box_y)
+
+            for i = 1,9 do
+                grid[i]:draw()
+            end
         end
 
-        -- Menu
-        buttons.xo.options:draw((window_w - 30), 20, FontS)
-        if show_menu or winner ~= 0 then
-            buttons.xo.restart:draw(rightpos_x, 45, FontM)
-            buttons.xo.quit:draw(rightpos_x, 55 + sizeM_h, FontM)
+        if delay_order.xo[3] then
+            -- During gameplay
+            if winner == 0 then
+                love.graphics.setColor(White)
+                love.graphics.print("PLAYING:", 10, leftpos_y)
+                love.graphics.print("PLAYER " .. player_turn, 10, leftpos_y + 30)
+            end
         end
 
+        if delay_order.xo[2] then
+            -- Menu
+            buttons.xo.options:draw((window_w - 30), 20, FontS)
+            if show_menu or winner ~= 0 then
+                buttons.xo.restart:draw(rightpos_x, 45, FontM)
+                buttons.xo.quit:draw(rightpos_x, 55 + sizeM_h, FontM)
+            end
+        end
+        
         -- Game over
         if winner ~= 0 then
             love.graphics.setColor(White)
@@ -394,83 +472,91 @@ function love.draw()
         end
     
     elseif game_state.superxo then
-        love.graphics.setColor(White)
-        love.graphics.setLineWidth(4)
-        love.graphics.rectangle("line", box_x - 8, box_y - 8, box_l + 16, box_l + 16)
-        love.graphics.setLineWidth(2)
-        love.graphics.setColor(White)
-        love.graphics.rectangle("fill", box_x, box_y, box_l, box_l)
-        love.graphics.draw(grid_area, box_x, box_y)
-
-        for i = 1, 9 do
-            if supergrid[i].set_cam then
-                for j = 1,9 do
-                    supergrid[i][j]:draw()
-                end
-            end
-        end
-
-        -- Mini grid to switch board on screen
-        minigrid_boxsize = 20
-        minigrid_x = leftpos_x
-        minigrid_y = leftpos_y + 300
-        minigrid_spacing = 25
-        for i = 1, 9 do
-
-            if supergrid[i].set_cam then
-                minigrid_color = "light"
-            else
-                minigrid_color = "dark"
-            end
-
-
-            DrawMinigrid(i, minigrid_x, minigrid_y, minigrid_boxsize, minigrid_color)
-
-            if mini_winner[i] then
-                love.graphics.rectangle("line", minigrid_x - 1, minigrid_y - 1, (minigrid_boxsize * 2) + 2, (minigrid_boxsize * 2) + 2)
-            end
-
-            minigrid_x = minigrid_x + 20 + minigrid_spacing
-            if i % 3 == 0 then
-                minigrid_x = leftpos_x
-                minigrid_y = minigrid_y + 20 + minigrid_spacing
-            end
-        end
-
-        -- During gameplay
-        local count = 0
-        local active = nil
-        local nonactive = nil
-        if winner == 0 then
+        if delay_order.superxo[1] then
             love.graphics.setColor(White)
-            love.graphics.print("PLAYING:", 10, leftpos_y)
-            love.graphics.print("PLAYER " .. player_turn, 10, leftpos_y + 30)
+            love.graphics.setLineWidth(4)
+            love.graphics.rectangle("line", box_x - 8, box_y - 8, box_l + 16, box_l + 16)
+            love.graphics.setLineWidth(2)
+            love.graphics.setColor(White)
+            love.graphics.rectangle("fill", box_x, box_y, box_l, box_l)
+            love.graphics.draw(grid_area, box_x, box_y)
+
             for i = 1, 9 do
-                if supergrid[i].active then
-                    count = count + 1
-                    active = i
-                else
-                    nonactive = i
-                end
                 if supergrid[i].set_cam then
-                    love.graphics.print("VIEWING:", 10, leftpos_y + 40 + (10 + sizeM_h)*2)
-                    love.graphics.print("BOARD " .. i, 10, leftpos_y + 70 + (10 + sizeM_h)*2)
+                    for j = 1,9 do
+                        supergrid[i][j]:draw()
+                    end
                 end
-            end
-            if count > 1 then
-                love.graphics.print("ACTIVE:", 10, leftpos_y + 20 + (10 + sizeM_h))
-                love.graphics.print("ALL EXCEPT " .. nonactive, 10, leftpos_y + 50 + (10 + sizeM_h))
-            else
-                love.graphics.print("ACTIVE:", 10, leftpos_y + 20 + (10 + sizeM_h))
-                love.graphics.print("BOARD " .. active, 10, leftpos_y + 50 + (10 + sizeM_h))
             end
         end
 
-        -- Menu
-        buttons.superxo.options:draw((window_w - 30), 20, FontS)
-        if show_menu or winner ~= 0 then
-            buttons.superxo.restart:draw((window_w - 10 - sizeM_w), 45, FontM)
-            buttons.superxo.quit:draw((window_w - 10 - sizeM_w), 55 + sizeM_h, FontM)
+        if delay_order.superxo[4] then
+            -- Mini grid to switch board on screen
+            minigrid_boxsize = 20
+            minigrid_x = leftpos_x
+            minigrid_y = leftpos_y + 300
+            minigrid_spacing = 25
+            for i = 1, 9 do
+
+                if supergrid[i].set_cam then
+                    minigrid_color = "light"
+                else
+                    minigrid_color = "dark"
+                end
+
+
+                DrawMinigrid(i, minigrid_x, minigrid_y, minigrid_boxsize, minigrid_color)
+
+                if mini_winner[i] then
+                    love.graphics.rectangle("line", minigrid_x - 1, minigrid_y - 1, (minigrid_boxsize * 2) + 2, (minigrid_boxsize * 2) + 2)
+                end
+
+                minigrid_x = minigrid_x + 20 + minigrid_spacing
+                if i % 3 == 0 then
+                    minigrid_x = leftpos_x
+                    minigrid_y = minigrid_y + 20 + minigrid_spacing
+                end
+            end
+        end
+
+        if delay_order.superxo[3] then
+            -- During gameplay
+            local count = 0
+            local active = nil
+            local nonactive = nil
+            if winner == 0 then
+                love.graphics.setColor(White)
+                love.graphics.print("PLAYING:", 10, leftpos_y)
+                love.graphics.print("PLAYER " .. player_turn, 10, leftpos_y + 30)
+                for i = 1, 9 do
+                    if supergrid[i].active then
+                        count = count + 1
+                        active = i
+                    else
+                        nonactive = i
+                    end
+                    if supergrid[i].set_cam then
+                        love.graphics.print("VIEWING:", 10, leftpos_y + 40 + (10 + sizeM_h)*2)
+                        love.graphics.print("BOARD " .. i, 10, leftpos_y + 70 + (10 + sizeM_h)*2)
+                    end
+                end
+                if count > 1 then
+                    love.graphics.print("ACTIVE:", 10, leftpos_y + 20 + (10 + sizeM_h))
+                    love.graphics.print("ALL EXCEPT " .. nonactive, 10, leftpos_y + 50 + (10 + sizeM_h))
+                else
+                    love.graphics.print("ACTIVE:", 10, leftpos_y + 20 + (10 + sizeM_h))
+                    love.graphics.print("BOARD " .. active, 10, leftpos_y + 50 + (10 + sizeM_h))
+                end
+            end
+        end
+
+        if delay_order.superxo[2] then
+            -- Menu
+            buttons.superxo.options:draw((window_w - 30), 20, FontS)
+            if show_menu or winner ~= 0 then
+                buttons.superxo.restart:draw((window_w - 10 - sizeM_w), 45, FontM)
+                buttons.superxo.quit:draw((window_w - 10 - sizeM_w), 55 + sizeM_h, FontM)
+            end
         end
 
         -- Game over
@@ -486,21 +572,20 @@ function love.draw()
 
     elseif game_state.menu then
         love.graphics.setColor(White)
-        -- love.graphics.rectangle("fill", bg_x, bg_y, star_size, star_size)
-        -- if bg_star == true then
-        --     love.graphics.rectangle("fill", bg_x + star_size, bg_y, star_size, star_size)
-        --     love.graphics.rectangle("fill", bg_x , bg_y + star_size, star_size, star_size)
-        --     love.graphics.rectangle("fill", bg_x, bg_y - star_size, star_size, star_size)
-        --     love.graphics.rectangle("fill", bg_x - star_size, bg_y, star_size, star_size)
-        -- end
-        -- love.graphics.print("Super Tic Tac Toe!", (window_w * 0.415), (window_h * 0.3))
-        love.graphics.draw(logo, 32 * 4, 8 * 4)
-
-        buttons.menu.play_standard:draw((window_w * 0.5 - sizeL_w * 0.5), (window_h * 0.4), FontL)
-        buttons.menu.play_super:draw((window_w * 0.5 - sizeL_w * 0.5), (window_h * 0.4 + sizeL_h + 10), FontL)
-        buttons.menu.exit_game:draw((window_w * 0.5 - sizeL_w * 0.5), (window_h * 0.4  + (sizeL_h + 10) * 2), FontL)
-
+        if delay_order.menu[1] then
+            love.graphics.draw(logo, 32 * 4, 8 * 4)
+        end
+        if delay_order.menu[2] then
+            buttons.menu.play_standard:draw((window_w * 0.5 - sizeL_w * 0.5), (window_h * 0.4), FontL)
+        end
+        if delay_order.menu[3] then
+            buttons.menu.play_super:draw((window_w * 0.5 - sizeL_w * 0.5), (window_h * 0.4 + sizeL_h + 10), FontL)
+        end    
+        if delay_order.menu[4] then    
+            buttons.menu.exit_game:draw((window_w * 0.5 - sizeL_w * 0.5), (window_h * 0.4  + (sizeL_h + 10) * 2), FontL)
+        end
     end
     love.graphics.setScissor(old_x, old_y, old_w, old_h)
+    -- love.graphics.print(Timer, 0, 0)
     rs.pop()
 end

@@ -56,6 +56,7 @@ function CheckWinner(grid)
     for i = 1, 7, 3 do
         if (grid[i].state == grid[i+1].state) and (grid[i].state ~= 0) then
             if grid[i].state == grid[i+2].state then
+                sounds.win:play()
                 print("Game Over! Player " .. grid[i].state .. " wins!")
                 winner = grid[i].state
                 
@@ -71,6 +72,7 @@ function CheckWinner(grid)
     for i = 1, 3, 1 do
         if (grid[i].state == grid[i+3].state) and (grid[i].state ~= 0) then
             if grid[i].state == grid[i+6].state then
+                sounds.win:play()
                 print("Game Over! Player " .. grid[i].state .. " wins!")
                 winner = grid[i].state
 
@@ -86,6 +88,7 @@ function CheckWinner(grid)
     for i = 0, 2, 2 do
         if (grid[1 + i].state == grid[5].state) and (grid[1 + i].state ~= 0) then
             if grid[1 + i].state == grid[9 - i].state then
+                sounds.win:play()
                 print("Game Over! Player " .. grid[1 + i].state .. " wins!")
                 winner = grid[1 + i].state
 
