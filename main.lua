@@ -2,8 +2,10 @@ local rs = require "assets/libraries/scaling/resolution_solution"
 local Block = require "assets/libraries/Block"
 local Grid = require "assets/libraries/Grid"
 local Button = require "assets/libraries/Button"
-local Player = require "assets/libraries/Player"
+local SmallBtn = require "assets/libraries/SmallBtn"
+local Game = require "assets/libraries/Game"
 local Palette = require "assets/libraries/Palette"
+local Settings = require "assets/libraries/Settings"
 
 -- Screen Scaling --
 rs.conf({
@@ -24,7 +26,6 @@ function ScaleFont(BaseSize, BaseWidth, NewWidth)
 end
 
 rs.resize_callback = function()
-    -- font = love.graphics.newFont("Pixeltype.ttf", math.max(math.min(rs.game_zone.w * 0.03, rs.game_zone.h * 0.03), 30))
     FontL = love.graphics.newFont("assets/fonts/Pixeltype.ttf", ScaleFont(96, 240 * 4, rs.game_width))
     FontM = love.graphics.newFont("assets/fonts/Pixeltype.ttf", ScaleFont(48, 240 * 4, rs.game_width))
     FontS = love.graphics.newFont("assets/fonts/Pixeltype.ttf", ScaleFont(32, 240 * 4, rs.game_width))
@@ -36,78 +37,18 @@ if os.getenv("LOCAL_LUA_DEBUGGER_VSCODE") == "1" then
     require("lldebugger").start()
 end
 
--- Resets game boards for both game modes
-function NewGame()
-    for i = 1, 9 do
-        grid[i].state = 0
-        grid[i].winner = false
-    end
-
-    for i = 1, 9 do
-        supergrid[i].active = false
-        supergrid[i].set_cam = false
-        supergrid[i].state = 0
-        for j = 1, 9 do
-            supergrid[i][j].state = 0
-            supergrid[i][j].winner = false
-        end
-        mini_winner[i] = false
-    end
-
-    supergrid[1].active = true
-    supergrid[1].set_cam = true
-
-    show_menu = false
-
-    winner = 0
-end
-
--- In-Game menu button
-function ShowMenu()
-    if show_menu then
-        show_menu = false
-    else
-        show_menu = true
-    end
-end
-
--- Changes game state
-function ChangeState(to)
-    -- When switching to either game mode, starts a new game
-    if to == "xo" or to == "superxo" then
-        NewGame()
-    end
-
-    for i in pairs(game_state) do
-        game_state[i] = false
-    end
-
-    game_state[to] = true
-
-    -- Restart animations/sounds
-    RestartDelayOrder()
-end
-
--- Switches board on screen for Super game mode
-function SetCam(grid)
-    for i = 1,9 do
-        supergrid[i].set_cam = false
-    end
-
-    supergrid[grid].set_cam = true
-end
-
+-- Displays objects and plays sounds in order found in respective tables.
 function Delay()
     for i in pairs(game_state) do
         if game_state[i] then
             for j in pairs(delay_order[i]) do
                 if Timer < 0 and not delay_order[i][j] then
                     delay_order[i][j] = true
-                    audio_order[i][j]:play()
+                    PlaySound(audio_order[i][j])
                     if j == 1 then
-                        Timer = 1.5
+                        Timer = 1.5 -- Initial delay
                     else
-                        Timer = 0.5
+                        Timer = 0.5 -- Subsequent delays
                     end
                 elseif delay_order[i][j] then
                     goto next
@@ -115,6 +56,11 @@ function Delay()
                     return
                 end
                 ::next::
+            end
+
+            -- Enables mouse clicks after animation has concluded.
+            if Interact == false then
+                Interact = true
             end
         end
     end
@@ -127,6 +73,7 @@ function RestartDelayOrder()
         end
     end
     Timer = 1
+    Interact = false
 end
 
 function love.load(arg)
@@ -145,15 +92,13 @@ function love.load(arg)
     _G.grid_area = love.graphics.newImage('assets/sprites/Grid_Black2.png')
     _G.logo = love.graphics.newImage('assets/sprites/LOGO.png')
 
-    -- Loads in sound files
+    -- Loads sound files
     _G.sounds = {}
     sounds.logo = love.audio.newSource('assets/sounds/logo-beep.mp3', "static")
-    sounds.logo:setVolume(0.5)
     sounds.inbetween = love.audio.newSource('assets/sounds/inbetween-beep.mp3', "static")
-    sounds.inbetween:setVolume(0.5)
     sounds.game_start = love.audio.newSource('assets/sounds/game-start-beep.mp3', "static")
-    sounds.game_start:setVolume(0.5)
     sounds.win = love.audio.newSource('assets/sounds/winner-beep.mp3', "static")
+    VolCont(true)
 
     -- Assigns screen size and board size to variables
     _G.window_w , _G.window_h = rs.game_width, rs.game_height
@@ -172,28 +117,26 @@ function love.load(arg)
         supergrid[i].set_cam = false
     end
 
-
-    -- _G.bg_x = 20
-    -- _G.bg_y = 20
-    -- _G.star_size = 5
-    -- _G.bg_counter = 0
-
     -- Table of game states, menu is enabled by default
     _G.game_state = {}
     game_state.menu = true
+    game_state.mode = false
     game_state.xo = false
     game_state.superxo = false
 
     -- Table to store buttons for each game state
     _G.buttons = {
         menu = {},
-        xo = {},
+        mode = {},
+        game = {},
         superxo = {},
+        general = {},
     }
 
     -- Table to store order of appearance (visual&audio)
     _G.delay_instances = {}
-    delay_instances.menu = 4
+    delay_instances.menu = 2
+    delay_instances.mode = 3
     delay_instances.xo = 3
     delay_instances.superxo = 4
 
@@ -205,6 +148,7 @@ function love.load(arg)
     end
 
     audio_order["menu"][1] = sounds.logo
+    audio_order["mode"][1] = sounds.inbetween
     audio_order["xo"][1] = sounds.game_start
     audio_order["superxo"][1] = sounds.game_start
     for i in pairs(game_state) do
@@ -223,25 +167,28 @@ function love.load(arg)
     _G.sizeM_h = 0.10 * rs.game_height
     _G.sizeM_w = 0.20 * rs.game_width
 
+    _G.sizeS = 20
+
     -- Creating buttons for each game state
-    buttons.menu.play_standard = Button("STANDARD", ChangeState, "xo", sizeL_w, sizeL_h)
-    buttons.menu.play_super = Button("SUPER", ChangeState, "superxo", sizeL_w, sizeL_h)
+    buttons.menu.play_standard = Button("STANDARD", ChangeState, "modexo", sizeL_w, sizeL_h)
+    buttons.menu.play_super = Button("SUPER", ChangeState, "modesuper", sizeL_w, sizeL_h)
     buttons.menu.exit_game = Button("EXIT", love.event.quit, nil, sizeL_w, sizeL_h)
-
-    buttons.xo.options = Button("P", ShowMenu, nil, 20, 20)
-    buttons.xo.restart = Button("Restart", NewGame, nil, sizeM_w, sizeM_h)
-    buttons.xo.quit = Button("Menu", ChangeState, "menu", sizeM_w, sizeM_h)
-
-    buttons.superxo.options = Button("P", ShowMenu, nil, 20, 20)
-    buttons.superxo.restart = Button("Restart", NewGame, nil, sizeM_w, sizeM_h)
-    buttons.superxo.quit = Button("Menu", ChangeState, "menu", sizeM_w, sizeM_h)
+    
+    buttons.mode.vs_player = SmallBtn(player_w, player_b, ChangeState, "normal")
+    buttons.mode.vs_bot = SmallBtn(bot_w, bot_b, ChangeState, "bot")
+    
     for i = 1,9 do
         buttons.superxo[i] = Button("", SetCam, i, 40, 40)
     end
+    
+    buttons.game.options = SmallBtn(pause_w, pause_b, ShowMenu)
+    buttons.game.restart = Button("RESTART", NewGame, nil, sizeM_w, sizeM_h)
+    buttons.game.quit = Button("MENU", ChangeState, "menu", sizeM_w, sizeM_h)
+    
+    buttons.general.audio = SmallBtn(audio1_w, audio1_b, VolCont, nil, "Audio")
 
-
-    -- Initiating player turn, only the first game starts with player 1
-    player_turn = 1
+    BotPlay = false
+    math.randomseed(os.time())
 end
 
 -- Press F11 for fullscreen
@@ -257,6 +204,11 @@ function love.mousepressed(x, y, button)
     -- Grab coordinates after scaling
     x, y = rs.to_game(x, y)
 
+    -- Disables mouse clicks till animations have loaded.
+    if Interact == false then
+        return
+    end
+
     -- Make sure its left click
     if button == 1 then
         -- On press, uses Cursor 3
@@ -265,18 +217,19 @@ function love.mousepressed(x, y, button)
 
         if game_state.xo then
 
-            -- Only menu buttons are active if Game over
-            if winner ~= 0 then
+            -- Only menu buttons are active if Game over or Bot Turn.
+            if winner ~= 0 or (BotPlay and player_turn == 2) then
                 goto next
             end
             
             -- Places X or O on board depending on player turn
             for i = 1, 9 do
                 if grid[i]:pressCheck(x, y) then
-                    sounds.inbetween:play()
+                    PlaySound(sounds.inbetween, player_turn)
                     XorO(grid[i], player_turn)
                     player_turn = SwitchTurn(player_turn)
                     _G.winner = CheckWinner(grid)
+                    Timer = 1
                 end
             end
 
@@ -286,7 +239,7 @@ function love.mousepressed(x, y, button)
         if game_state.superxo then
             
             -- Only menu buttons are active if Game over
-            if winner ~= 0 then
+            if winner ~= 0 or (BotPlay and player_turn == 2) then
                 goto next
             end
 
@@ -295,12 +248,13 @@ function love.mousepressed(x, y, button)
                 if supergrid[i].active and supergrid[i].set_cam then
                     for j = 1, 9 do
                         if supergrid[i][j]:pressCheck(x, y) then
-                            sounds.inbetween:play()
+                            PlaySound(sounds.inbetween, player_turn)
                             XorO(supergrid[i][j], player_turn)
                             supergrid[i].state = CheckWinner(supergrid[i])
                             SwitchBoard(j)
                             player_turn = SwitchTurn(player_turn)
                             _G.winner = CheckWinner(supergrid)
+                            Timer = 1
                         end
                     end
                 end
@@ -310,13 +264,27 @@ function love.mousepressed(x, y, button)
 
         ::next::
         -- Buttons
-        for i in pairs(game_state) do
-            if game_state[i] then
-                for j in pairs(buttons[i]) do
-                    buttons[i][j]:pressCheck(x,y)
+        for i, v in ipairs({"mode", "menu"}) do
+            if game_state[v] then
+                for j in pairs(buttons[v]) do
+                    buttons[v][j]:pressCheck(x,y)
                 end
             end
         end
+
+        if game_state.xo or game_state.superxo then
+            for i in pairs(buttons.game) do
+                buttons.game[i]:pressCheck(x,y)
+            end
+        end
+
+        if game_state.superxo then
+            for i = 1,9 do
+                buttons.superxo[i]:pressCheck(x,y)
+            end
+        end
+
+        buttons.general.audio:pressCheck(x,y)
 
     end
 end
@@ -366,18 +334,51 @@ function love.mousemoved(x, y)
     end
 
     ::next::
-    for i in pairs(game_state) do
-        if game_state[i] then
-            for j in pairs(buttons[i]) do
-                if buttons[i][j]:pressCheck(x, y, true) then
+    -- Buttons
+    for i, v in ipairs({"mode", "menu"}) do
+        if game_state[v] then
+            for j in pairs(buttons[v]) do
+                if buttons[v][j]:pressCheck(x,y,true) then
                     love.mouse.setCursor(cursor2)
-                    buttons[i][j].type = 1
+                    buttons[v][j].type = 1
                     return
                 else
-                    buttons[i][j].type = 0
+                    buttons[v][j].type = 0
                 end
             end
         end
+    end
+
+    if game_state.xo or game_state.superxo then
+        for i in pairs(buttons.game) do
+            if buttons.game[i]:pressCheck(x,y,true) then
+                love.mouse.setCursor(cursor2)
+                buttons.game[i].type = 1
+                return
+            else
+                buttons.game[i].type = 0
+            end
+        end
+    end
+
+    if game_state.superxo then
+        for i = 1,9 do
+            if buttons.superxo[i]:pressCheck(x,y, true) then
+                love.mouse.setCursor(cursor2)
+                buttons.superxo[i].type = 1
+                return
+            else
+                buttons.superxo[i].type = 0
+            end
+        end
+    end
+
+    if buttons.general.audio:pressCheck(x,y,true) then
+        love.mouse.setCursor(cursor2)
+        buttons.general.audio.type = 1
+        return
+    else
+        buttons.general.audio.type = 0
     end
 
     love.mouse.setCursor(cursor1)
@@ -394,18 +395,26 @@ function love.update(dt)
     end
 
     Delay()
+    
+    if player_turn == 2 and BotPlay then
+        if game_state.xo then
+            BotTurn("xo")
+        elseif game_state.superxo then
+            BotTurn("superxo")
+        end
+    end
 
     if winner ~= 0 then
         if game_state.superxo then
             Counter = Counter + dt
             if Counter >= 0.5 then
                 for i = 1,9 do
-            if supergrid[i].winner then
-                if mini_winner[i] then
-                    mini_winner[i] = false
-                else
-                      mini_winner[i] = true
-                    end
+                    if supergrid[i].winner then
+                        if mini_winner[i] then
+                            mini_winner[i] = false
+                        else
+                            mini_winner[i] = true
+                        end
                     end
                 end
                 Counter = 0
@@ -425,7 +434,7 @@ function love.draw()
 
     local leftpos_x = 30
     local leftpos_y = 30
-    local rightpos_x = (window_w - 10 - sizeM_w)
+    local rightpos_x = (window_w - 10)
     local rightpos_y = 200
     if game_state.xo then
         if delay_order.xo[1] then
@@ -447,27 +456,36 @@ function love.draw()
             if winner == 0 then
                 love.graphics.setColor(White)
                 love.graphics.print("PLAYING:", 10, leftpos_y)
-                love.graphics.print("PLAYER " .. player_turn, 10, leftpos_y + 30)
+                if BotPlay and player_turn == 2 then
+                    love.graphics.print("BOT", 10, leftpos_y + 30)
+                else
+                    love.graphics.print("PLAYER " .. player_turn, 10, leftpos_y + 30)
+                end
             end
         end
 
         if delay_order.xo[2] then
             -- Menu
-            buttons.xo.options:draw((window_w - 30), 20, FontS)
+            buttons.game.options:draw(rightpos_x - sizeS, 20)
             if show_menu or winner ~= 0 then
-                buttons.xo.restart:draw(rightpos_x, 45, FontM)
-                buttons.xo.quit:draw(rightpos_x, 55 + sizeM_h, FontM)
+                buttons.game.restart:draw(rightpos_x - sizeM_w, 45, FontM)
+                buttons.game.quit:draw(rightpos_x - sizeM_w, 55 + sizeM_h, FontM)
             end
+            buttons.general.audio:draw(rightpos_x - sizeS, (window_h - 40))
         end
         
         -- Game over
         if winner ~= 0 then
             love.graphics.setColor(White)
             if winner ~= 0 and winner < 3 then
-                love.graphics.print("PLAYER " .. winner, rightpos_x, rightpos_y)
-                love.graphics.print("WINS!", rightpos_x, rightpos_y + 30)
+                if BotPlay and winner == 2 then
+                    love.graphics.print("BOT", rightpos_x - sizeM_w, rightpos_y)
+                else
+                    love.graphics.print("PLAYER " .. winner, rightpos_x - sizeM_w, rightpos_y)
+                end                
+                love.graphics.print("WINS!", rightpos_x - sizeM_w, rightpos_y + 30)
             else
-                love.graphics.print("TIE!", rightpos_x, rightpos_y)
+                love.graphics.print("TIE!", rightpos_x - sizeM_w, rightpos_y)
             end
         end
     
@@ -527,7 +545,11 @@ function love.draw()
             if winner == 0 then
                 love.graphics.setColor(White)
                 love.graphics.print("PLAYING:", 10, leftpos_y)
-                love.graphics.print("PLAYER " .. player_turn, 10, leftpos_y + 30)
+                if BotPlay and player_turn == 2 then
+                    love.graphics.print("BOT", 10, leftpos_y + 30)
+                else
+                    love.graphics.print("PLAYER " .. player_turn, 10, leftpos_y + 30)
+                end
                 for i = 1, 9 do
                     if supergrid[i].active then
                         count = count + 1
@@ -552,21 +574,26 @@ function love.draw()
 
         if delay_order.superxo[2] then
             -- Menu
-            buttons.superxo.options:draw((window_w - 30), 20, FontS)
+            buttons.game.options:draw(rightpos_x - sizeS, 20)
             if show_menu or winner ~= 0 then
-                buttons.superxo.restart:draw((window_w - 10 - sizeM_w), 45, FontM)
-                buttons.superxo.quit:draw((window_w - 10 - sizeM_w), 55 + sizeM_h, FontM)
+                buttons.game.restart:draw(rightpos_x - sizeM_w, 45, FontM)
+                buttons.game.quit:draw(rightpos_x - sizeM_w, 55 + sizeM_h, FontM)
             end
+            buttons.general.audio:draw(rightpos_x - sizeS, (window_h - 40))
         end
 
         -- Game over
         if winner ~= 0 then
             love.graphics.setColor(White)
             if winner ~= 0 and winner < 3 then
-                love.graphics.print("PLAYER " .. winner, rightpos_x, rightpos_y)
-                love.graphics.print("WINS!", rightpos_x, rightpos_y + 30)
+                if BotPlay and winner == 2 then
+                    love.graphics.print("BOT", rightpos_x - sizeM_w, rightpos_y)
+                else
+                    love.graphics.print("PLAYER " .. winner, rightpos_x - sizeM_w, rightpos_y)
+                end
+                love.graphics.print("WINS!", rightpos_x - sizeM_w, rightpos_y + 30)
             else
-                love.graphics.print("TIE!", rightpos_x, rightpos_y)
+                love.graphics.print("TIE!", rightpos_x - sizeM_w, rightpos_y)
             end
         end
 
@@ -577,15 +604,30 @@ function love.draw()
         end
         if delay_order.menu[2] then
             buttons.menu.play_standard:draw((window_w * 0.5 - sizeL_w * 0.5), (window_h * 0.4), FontL)
-        end
-        if delay_order.menu[3] then
+
             buttons.menu.play_super:draw((window_w * 0.5 - sizeL_w * 0.5), (window_h * 0.4 + sizeL_h + 10), FontL)
-        end    
-        if delay_order.menu[4] then    
+ 
             buttons.menu.exit_game:draw((window_w * 0.5 - sizeL_w * 0.5), (window_h * 0.4  + (sizeL_h + 10) * 2), FontL)
+            
+            buttons.general.audio:draw(rightpos_x - sizeS, (window_h - 40))
         end
+
+    elseif game_state.mode then
+        love.graphics.setColor(White)
+        love.graphics.setFont(FontL)
+        if delay_order.mode[1] then
+            love.graphics.printf("VS", (window_w*0.5 - 100), 10, 200, "center")
+        end
+        if delay_order.mode[2] then
+            love.graphics.printf("PLYR", (window_w * 0.5 - 320), (window_h * 0.5 + 150), 300, "center")
+            buttons.mode.vs_player:draw((window_w * 0.5 - 320), (window_h * 0.5 - 170))
+        end
+        if delay_order.mode[3] then
+            love.graphics.printf("BOT", (window_w * 0.5 + 23), (window_h * 0.5 + 150), 300, "center")
+            buttons.mode.vs_bot:draw((window_w * 0.5 + 20), (window_h * 0.5 - 170))
+        end
+        love.graphics.setFont(FontM)
     end
     love.graphics.setScissor(old_x, old_y, old_w, old_h)
-    -- love.graphics.print(Timer, 0, 0)
     rs.pop()
 end

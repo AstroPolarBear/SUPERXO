@@ -39,27 +39,26 @@ function Button(text, func, func_param, width, height)
                 love.graphics.rectangle("line", self.button_x, self.button_y, self.width, self.height)
 
                 love.graphics.printf(self.text, self.text_x, self.text_y, self.width, "center")
-                -- love.graphics.print(self.text, self.text_x, self.text_y)
             elseif type == 1 then
                 love.graphics.setColor(White)
                 love.graphics.rectangle("fill", self.button_x, self.button_y, self.width, self.height)
 
                 love.graphics.setColor(Black)
                 love.graphics.printf(self.text, self.text_x, self.text_y, self.width, "center")
-                -- love.graphics.print(self.text, self.text_x, self.text_y)
             else
                 love.graphics.setColor(White)
                 love.graphics.rectangle(type, self.button_x, self.button_y, self.width, self.height)
             end
 
             love.graphics.setFont(FontM)
+            love.graphics.setColor(White)
         end,
 
         pressCheck = function (self, mouse_x, mouse_y, IsHover)
             if (mouse_x >= self.button_x) and (mouse_x <= self.button_x + self.width) then
                 if (mouse_y >= self.button_y) and (mouse_y <= self.button_y + self.height) then
                     if func and not IsHover then
-                        sounds.inbetween:play()
+                        PlaySound(sounds.inbetween)
                         if self.func_param then
                             self.func(self.func_param)
                         else
