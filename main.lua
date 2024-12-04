@@ -1,4 +1,4 @@
-local rs = require "assets/libraries/scaling/resolution_solution"
+local rs = require "assets/libraries/resolution_solution"
 local Block = require "assets/libraries/Block"
 local Grid = require "assets/libraries/Grid"
 local Button = require "assets/libraries/Button"
@@ -254,6 +254,7 @@ function love.mousepressed(x, y, button)
                             SwitchBoard(j)
                             player_turn = SwitchTurn(player_turn)
                             _G.winner = CheckWinner(supergrid)
+                            TieBreaker(supergrid)
                             Timer = 1
                         end
                     end
@@ -594,6 +595,9 @@ function love.draw()
                 love.graphics.print("WINS!", rightpos_x - sizeM_w, rightpos_y + 30)
             else
                 love.graphics.print("TIE!", rightpos_x - sizeM_w, rightpos_y)
+            end
+            if tiebreak then
+                love.graphics.print("TIE BREAKER!", rightpos_x - sizeM_w, rightpos_y + 60)
             end
         end
 

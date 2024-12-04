@@ -22,8 +22,9 @@ function NewGame()
 
     show_menu = false
 
-    winner = 0
-    player_turn = 1
+    _G.winner = 0
+    _G.player_turn = 1
+    _G.tiebreak = false
 end
 
 -- In-Game menu button
@@ -211,6 +212,30 @@ function CheckWinner(grid)
     return winner
 end
 
+function TieBreaker(supergrid)
+    if winner == 3 then
+        local counter1 = 0
+        local counter2 = 0
+        for i = 1, 9 do
+            if supergrid[i].state == 1 then
+                counter1 = counter1 + 1
+            elseif supergrid[i].state == 2 then
+                counter2 = counter2 + 1
+            end
+        end
+
+        if counter1 > counter2 then
+            _G.winner = 1
+            _G.tiebreak = true
+        elseif counter2 > counter1 then
+            _G.winner = 2
+            _G.tiebreak = true
+        else
+            _G.winner = 3
+        end
+    end
+end
+
 function BotTurn(mode)
     local EmptyBlocks = {}
     local j = 1
@@ -258,11 +283,3 @@ function BotTurn(mode)
         end
     end
 end
-
--- function DelayCam()
---     if Timer < 0 then
---         SetCam(CamTarget)
---         Timer = 1
---         delay_cam = false
---     end
--- end
