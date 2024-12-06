@@ -12,7 +12,7 @@ Using LOVE 2D and Lua, <b>SUPER XO</b> provides textual indicators of the curren
 
 Feeling like giving the complexity a rest and returning to simpler times? <b>SUPER XO</b> provides a STANDARD XO mode as well! Contaning the same helpful visual features of the SUPER mode but without the complexities. But what if there is no one to play the game with? <b>SUPER XO</b>'s very simple bot is here to help! Players are able to choose to play both modes either against a friend or a bot.
 
-To start playing, click on <b>SUPERXO.love</b>!
+To start playing, click on <b>SUPERXO.exe</b>!
 
 ## Rules
 
