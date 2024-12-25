@@ -1,6 +1,6 @@
 # SUPER XO
 
-#### Video Demo: <URL HERE>
+#### Video Demo: https://youtu.be/nWSkPcI5zwo
 
 ## Description
 
